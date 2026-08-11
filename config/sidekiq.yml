@@ -1,0 +1,6 @@
+:concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 5) %>
+:max_retries: 10
+:queues:
+  - default
+  - mailers
+  - clothing_analysis

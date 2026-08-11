@@ -1,0 +1,29 @@
+# Ignore local environment files.
+/.env*
+!/example.env
+
+# Ignore Rails runtime output.
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+!/tmp/pids/
+!/tmp/pids/.keep
+!/tmp/storage/
+!/tmp/storage/.keep
+
+# Ignore local storage and uploaded files.
+/storage/*
+!/storage/.keep
+
+# Ignore local Bundler and generated coverage output.
+/.bundle/
+/vendor/bundle/
+/coverage/
+
+# Ignore encrypted credential keys.
+/config/master.key
+/config/credentials/*.key
+
+# Ignore macOS metadata.
+.DS_Store
