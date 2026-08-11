@@ -8,7 +8,10 @@ Rails.application.routes.draw do
       delete "auth/logout", to: "auth#logout"
 
       get "health", to: "health#show"
+      get "metadata", to: "metadata#index"
       resource :me, only: %i[show update], controller: :me
+      resource :style_profile, only: %i[show update], controller: :style_profiles
+      resource :wardrobe, only: :show, controller: :wardrobes
     end
   end
 

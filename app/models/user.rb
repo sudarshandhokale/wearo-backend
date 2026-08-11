@@ -1,11 +1,15 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :validatable
 
+  has_one :style_profile, dependent: :destroy
+  has_one :wardrobe, dependent: :destroy
+
   validates :first_name, :timezone, :country_code, presence: true
 
   before_validation :normalize_email
   before_validation :normalize_country_code
   before_validation :set_default_timezone
+  after_create :create_default_profile_records
 
   def full_name
     [ first_name, last_name ].compact_blank.join(" ")
@@ -23,5 +27,10 @@ class User < ApplicationRecord
 
   def set_default_timezone
     self.timezone = timezone.presence || "UTC"
+  end
+
+  def create_default_profile_records
+    create_style_profile!
+    create_wardrobe!(name: Wardrobe::DEFAULT_NAME)
   end
 end

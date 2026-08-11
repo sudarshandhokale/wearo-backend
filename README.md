@@ -49,6 +49,15 @@ Health check:
 GET /api/v1/health
 ```
 
+Metadata:
+
+```text
+GET /api/v1/metadata
+```
+
+Returns ISO country selections and style profile option lists for clients.
+`preferred_city` is free text in Phase 1.
+
 Authentication:
 
 ```text

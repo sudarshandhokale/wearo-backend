@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_11_150100) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_11_160100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -51,6 +51,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_11_150100) do
     t.index ["jti"], name: "index_jwt_denylist_on_jti", unique: true
   end
 
+  create_table "style_profiles", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.jsonb "preferred_styles", default: [], null: false
+    t.jsonb "preferred_colors", default: [], null: false
+    t.jsonb "disliked_colors", default: [], null: false
+    t.jsonb "fit_preferences", default: {}, null: false
+    t.jsonb "additional_preferences", default: {}, null: false
+    t.boolean "onboarding_completed", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_style_profiles_on_user_id", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "first_name", null: false
     t.string "last_name"
@@ -69,6 +82,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_11_150100) do
     t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
   end
 
+  create_table "wardrobes", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", default: "My Wardrobe", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_wardrobes_on_user_id", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "style_profiles", "users"
+  add_foreign_key "wardrobes", "users"
 end

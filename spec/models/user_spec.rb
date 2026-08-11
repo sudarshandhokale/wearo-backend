@@ -5,6 +5,14 @@ RSpec.describe User, type: :model do
 
   it { is_expected.to validate_presence_of(:first_name) }
 
+  it "creates a default style profile and wardrobe" do
+    user = create(:user)
+
+    expect(user.style_profile).to be_present
+    expect(user.wardrobe).to be_present
+    expect(user.wardrobe.name).to eq(Wardrobe::DEFAULT_NAME)
+  end
+
   it "normalizes email and country code" do
     user.email = " ALEX@EXAMPLE.COM "
     user.country_code = "in"
