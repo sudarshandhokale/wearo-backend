@@ -48,3 +48,28 @@ Health check:
 ```text
 GET /api/v1/health
 ```
+
+Authentication:
+
+```text
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+POST   /api/v1/auth/refresh
+POST   /api/v1/auth/logout
+DELETE /api/v1/auth/logout
+GET    /api/v1/me
+PATCH  /api/v1/me
+```
+
+Auth endpoints follow the SAFEGO-style response convention:
+
+```json
+{
+  "success": true,
+  "data": {},
+  "meta": null
+}
+```
+
+Successful register, login, and refresh responses include the JWT in the
+`Authorization` response header.
