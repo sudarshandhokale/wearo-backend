@@ -5,12 +5,6 @@
 # Ignore Rails runtime output.
 /log/*
 /tmp/*
-!/log/.keep
-!/tmp/.keep
-!/tmp/pids/
-!/tmp/pids/.keep
-!/tmp/storage/
-!/tmp/storage/.keep
 
 # Ignore local storage and uploaded files.
 /storage/*
@@ -27,3 +21,4 @@
 
 # Ignore macOS metadata.
 .DS_Store
+.idea
