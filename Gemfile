@@ -45,7 +45,7 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
   gem "rubocop", "~> 1.72", require: false
   gem "rubocop-rails", require: false
-  gem "rspec-rails", "~> 7.1"
+  gem "rspec-rails", "~> 8.0"
   gem "factory_bot_rails"
 end
 
