@@ -98,6 +98,7 @@ module Metadata
     def self.all
       {
         countries: countries,
+        legal: legal,
         timezones: timezones,
         timezone_countries: timezone_countries,
         style_profile: serialize_options(STYLE_OPTIONS),
@@ -121,6 +122,22 @@ module Metadata
           name: country.iso_short_name
         }
       end.sort_by { |country| country[:name] }
+    end
+
+    def self.legal
+      {
+        minimum_age: 18,
+        terms: {
+          version: User::TERMS_VERSION,
+          url: AppConfig.fetch(:terms_url, default: "http://localhost:8081/terms")
+        },
+        privacy: {
+          version: User::PRIVACY_VERSION,
+          url: AppConfig.fetch(:privacy_url, default: "http://localhost:8081/privacy")
+        },
+        ai_processing_required: true,
+        full_body_image_consent_required: true
+      }
     end
 
     def self.timezones

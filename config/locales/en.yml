@@ -1,8 +1,27 @@
 en:
+  account_mailer:
+    email_confirmation:
+      action: "Confirm email"
+      expiration: "This confirmation link expires in 2 days."
+      instructions: "Confirm your email address to finish creating your WEARO account."
+      subject: "Confirm your WEARO email"
+    greeting: "Hello %{name},"
+    password_reset:
+      action: "Reset password"
+      expiration: "This password reset link expires in 30 minutes and can be used only once."
+      instructions: "Use the link below to reset your WEARO password."
+      subject: "Reset your WEARO password"
   auth:
+    confirmation_sent: "If an unconfirmed account exists for that email, a confirmation link has been sent"
+    email_not_confirmed: "Confirm your email address before signing in"
     invalid_login: "Invalid email or password"
+    invalid_or_expired_token: "This link is invalid or has expired"
     logged_out: "Logged out"
     registration_failed: "Registration failed"
+    registration_pending_confirmation: "Registration completed. Check your email to confirm your account"
+    password_reset_completed: "Password reset completed"
+    password_reset_failed: "Password could not be reset"
+    password_reset_sent: "If an account exists for that email, a password reset link has been sent"
     token_refreshed: "Token refreshed"
   clothing_items:
     create_failed: "Clothing item creation failed"
@@ -15,6 +34,8 @@ en:
       bad_request: "The request is invalid"
       internal_server_error: "Something went wrong"
       not_found: "The requested resource was not found"
+      rate_limited: "Too many requests. Try again later"
+      request_too_large: "The request is too large"
       unauthorized: "Unauthorized"
   external_context:
     invalid_date_range: "Choose a valid date range of up to 16 days"
@@ -23,7 +44,10 @@ en:
     update_failed: "Outfit feedback could not be updated"
     wear_failed: "The outfit could not be added to your wear history"
   profile:
+    account_deleted: "Account and personal data deleted"
     full_body_image_deleted: "Full-body profile image deleted"
+    invalid_deletion_confirmation: "Enter DELETE to confirm account deletion"
+    invalid_password: "The current password is incorrect"
     update_failed: "Profile update failed"
   style_profile:
     update_failed: "Style profile update failed"
@@ -69,3 +93,6 @@ en:
   visualizations:
     create_failed: "The outfit visualization could not be requested"
     daily_limit_reached: "You have reached today's outfit visualization limit"
+  consent:
+    ai_processing_required: "Accept AI processing before using this feature"
+    full_body_image_required: "Consent is required before uploading a full-body image"

@@ -6,6 +6,7 @@ class AnalyzeClothingItemJob < ApplicationJob
   def perform(clothing_item_id)
     clothing_item = ClothingItem.find(clothing_item_id)
     return if clothing_item.discarded?
+    return mark_consent_required(clothing_item) unless clothing_item.user.ai_processing_consented?
 
     result = ClothingAnalysis::Analyze.call(clothing_item)
     clothing_item.update!(
@@ -31,6 +32,15 @@ class AnalyzeClothingItemJob < ApplicationJob
       status: "analysis_failed",
       ai_analyzed_at: nil,
       ai_metadata: clothing_item.ai_metadata.merge("error" => { "code" => "analysis_failed" }),
+      updated_at: Time.current
+    )
+  end
+
+  def mark_consent_required(clothing_item)
+    clothing_item.update_columns(
+      status: "analysis_failed",
+      ai_analyzed_at: nil,
+      ai_metadata: clothing_item.ai_metadata.merge("error" => { "code" => "ai_processing_consent_required" }),
       updated_at: Time.current
     )
   end

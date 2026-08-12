@@ -1,4 +1,4 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "from@example.com"
+  default from: -> { AppConfig.fetch(:mailer_from, default: "no-reply@wearo.app") }
   layout "mailer"
 end

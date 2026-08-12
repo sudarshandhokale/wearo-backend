@@ -1,0 +1,4 @@
+<p><%= I18n.t("account_mailer.greeting", name: @user.first_name) %></p>
+<p><%= I18n.t("account_mailer.email_confirmation.instructions") %></p>
+<p><%= link_to I18n.t("account_mailer.email_confirmation.action"), @confirmation_url %></p>
+<p><%= I18n.t("account_mailer.email_confirmation.expiration") %></p>

@@ -8,6 +8,7 @@ class User::ProfileSerializer < ApplicationSerializer
              :country_code,
              :preferred_city,
              :full_body_image,
+             :consents,
              :created_at,
              :updated_at
 
@@ -20,7 +21,17 @@ class User::ProfileSerializer < ApplicationSerializer
 
     {
       signed_id: object.full_body_image.blob.signed_id,
-      url: Rails.application.routes.url_helpers.rails_storage_proxy_path(object.full_body_image, only_path: true)
+      url: Rails.application.routes.url_helpers.api_v1_medium_path(object.full_body_image.blob.signed_id)
+    }
+  end
+
+  def consents
+    {
+      terms: { accepted_at: format_datetime_value(object.terms_accepted_at), version: object.terms_version },
+      privacy: { accepted_at: format_datetime_value(object.privacy_accepted_at), version: object.privacy_version },
+      ai_processing: { accepted_at: format_datetime_value(object.ai_processing_consent_at) },
+      adult_confirmed_at: format_datetime_value(object.adult_confirmed_at),
+      full_body_image: { accepted_at: format_datetime_value(object.full_body_image_consent_at) }
     }
   end
 

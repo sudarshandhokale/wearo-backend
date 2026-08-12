@@ -7,7 +7,7 @@ class OutfitVisualization::ViewSerializer < ApplicationSerializer
 
     {
       signed_id: object.image.blob.signed_id,
-      url: Rails.application.routes.url_helpers.rails_storage_proxy_path(object.image, only_path: true)
+      url: Rails.application.routes.url_helpers.api_v1_medium_path(object.image.blob.signed_id)
     }
   end
 

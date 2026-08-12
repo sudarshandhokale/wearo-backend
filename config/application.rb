@@ -43,6 +43,8 @@ module WearoBackend
     config.active_job.queue_adapter = :sidekiq
     config.active_storage.variant_processor = :vips
     config.active_storage.resolve_model_to_route = :rails_storage_proxy
+    config.active_storage.draw_routes = false
+    config.middleware.use Rack::Attack
 
     config.generators do |g|
       g.test_framework :rspec

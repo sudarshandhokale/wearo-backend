@@ -66,8 +66,15 @@ POST   /api/v1/auth/login
 POST   /api/v1/auth/refresh
 POST   /api/v1/auth/logout
 DELETE /api/v1/auth/logout
+POST   /api/v1/auth/confirmations
+POST   /api/v1/auth/confirmations/verify
+POST   /api/v1/auth/password/forgot
+POST   /api/v1/auth/password/reset
 GET    /api/v1/me
 PATCH  /api/v1/me
+PATCH  /api/v1/me/consents
+GET    /api/v1/me/export
+DELETE /api/v1/me
 ```
 
 Auth endpoints follow the SAFEGO-style response convention:
@@ -80,8 +87,20 @@ Auth endpoints follow the SAFEGO-style response convention:
 }
 ```
 
-Successful register, login, and refresh responses include the JWT in the
-`Authorization` response header.
+Registration requires acceptance of the current terms, privacy policy, AI
+processing, and an adult-age confirmation. It sends a confirmation email but
+does not issue a JWT. Email verification issues the first JWT; subsequent login
+and refresh responses include the JWT in the `Authorization` response header.
+Password recovery and confirmation resend responses do not reveal whether an
+email is registered.
+
+Account deletion requires the current password and the exact confirmation value
+`DELETE`. It removes the account's relational data and queues private Active
+Storage files for deletion.
+
+The export endpoint downloads a JSON copy of profile, style, wardrobe metadata,
+outfits, wear history, feedback, plans, recommendation history, and AI usage.
+Image entries contain authenticated media URLs and can be downloaded separately.
 
 Clothing items:
 
@@ -188,3 +207,40 @@ Global garments use universal composition categories plus open metadata. The
 and `cultural_tags` preserves descriptors without requiring a country-specific
 closed list. Every category includes an `other` subtype so unfamiliar garments
 remain editable and usable instead of failing analysis.
+
+## Production Deployment
+
+Use `example.env` as the deployment configuration reference. Production boot
+fails when database, Redis, host, HTTPS frontend, CORS, policy URLs, OpenAI,
+private S3, SMTP, or JWT settings are missing.
+
+Run separate web and worker processes:
+
+```sh
+bundle exec rails server -b 0.0.0.0
+bundle exec sidekiq -C config/sidekiq.yml
+```
+
+Run database preparation during release:
+
+```sh
+bundle exec rails db:prepare
+```
+
+Schedule retention cleanup daily with the hosting provider:
+
+```sh
+bundle exec rails runner "DataRetentionCleanupJob.perform_later"
+```
+
+Health endpoints:
+
+```text
+GET /api/v1/health
+GET /api/v1/health/readiness
+```
+
+Readiness checks PostgreSQL, Redis, and production storage configuration. Rack
+Attack limits authentication, registration, recovery email, uploads,
+recommendations, and visualizations. Enable provider-level WAF and rate limiting
+at the public edge as an additional layer.

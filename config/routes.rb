@@ -3,17 +3,25 @@ Rails.application.routes.draw do
     namespace :v1 do
       post "auth/register", to: "auth#register"
       post "auth/login", to: "auth#login"
+      post "auth/confirmations", to: "auth#resend_confirmation"
+      post "auth/confirmations/verify", to: "auth#confirm_email"
+      post "auth/password/forgot", to: "auth#forgot_password"
+      post "auth/password/reset", to: "auth#reset_password"
       post "auth/refresh", to: "auth#refresh"
       post "auth/logout", to: "auth#logout"
       delete "auth/logout", to: "auth#logout"
 
       get "health", to: "health#show"
+      get "health/readiness", to: "health#readiness"
       get "metadata", to: "metadata#index"
+      get "media/:id", to: "media#show", as: :medium
       get "ai/usage", to: "ai_usage#show"
       get "context", to: "external_contexts#show"
       post "stylist/recommendations", to: "stylist#recommendations"
-      resource :me, only: %i[show update], controller: :me
+      resource :me, only: %i[show update destroy], controller: :me
       delete "me/full_body_image", to: "me#destroy_full_body_image"
+      patch "me/consents", to: "me#update_consents"
+      get "me/export", to: "me#export"
       resource :style_profile, only: %i[show update], controller: :style_profiles
       resource :wardrobe, only: :show, controller: :wardrobes
       resources :clothing_items do

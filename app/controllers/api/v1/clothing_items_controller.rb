@@ -2,6 +2,7 @@ module Api
   module V1
     class ClothingItemsController < BaseController
       before_action :set_clothing_item, only: %i[show update destroy reanalyze]
+      before_action :require_ai_processing_consent!, if: :ai_processing_requested?
 
       def index
         items = filtered_clothing_items.recent_first.page(params[:page]).per(per_page)
@@ -113,6 +114,13 @@ module Api
 
       def duplicate_image_response
         error_response(error: { message: I18n.t("clothing_items.duplicate_image") }, status: :unprocessable_entity)
+      end
+
+      def ai_processing_requested?
+        return true if action_name == "reanalyze"
+        return false unless action_name.in?(%w[create update])
+
+        clothing_item_params[:image].present?
       end
     end
   end

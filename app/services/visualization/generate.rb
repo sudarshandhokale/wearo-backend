@@ -38,6 +38,8 @@ module Visualization
           updated_at: Time.current
         ) if visualization.persisted?
         raise
+      ensure
+        visualization.reference_image.purge_later if visualization.persisted? && visualization.reference_image.attached?
       end
     end
   end

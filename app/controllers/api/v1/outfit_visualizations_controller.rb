@@ -5,6 +5,7 @@ module Api
 
       before_action :set_outfit
       before_action :set_visualization, only: :show
+      before_action :require_ai_processing_consent!, only: :create
 
       def index
         visualizations = @outfit.outfit_visualizations.recent_first.page(params[:page]).per(per_page)

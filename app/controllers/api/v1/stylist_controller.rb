@@ -1,6 +1,8 @@
 module Api
   module V1
     class StylistController < BaseController
+      before_action :require_ai_processing_consent!
+
       def recommendations
         result = Stylist::Recommend.call(
           user: current_user,

@@ -25,6 +25,7 @@ class ApplicationController < ActionController::API
 
     payload = Auth::Token.decode(bearer_token)
     @current_user = User.find(payload[:sub])
+    raise Auth::Token::DecodeError unless @current_user.confirmed?
   rescue Auth::Token::DecodeError, Auth::Token::RevokedTokenError, ActiveRecord::RecordNotFound
     error_response(error: { message: I18n.t("errors.messages.unauthorized") }, status: :unauthorized)
   end

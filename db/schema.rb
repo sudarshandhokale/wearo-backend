@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_12_170300) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_12_180100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -267,7 +267,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_170300) do
     t.string "last_sign_in_ip"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "confirmed_at"
+    t.datetime "terms_accepted_at"
+    t.string "terms_version"
+    t.datetime "privacy_accepted_at"
+    t.string "privacy_version"
+    t.datetime "ai_processing_consent_at"
+    t.datetime "adult_confirmed_at"
+    t.datetime "full_body_image_consent_at"
+    t.integer "token_version", default: 0, null: false
     t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
+    t.index ["confirmed_at"], name: "index_users_on_confirmed_at"
   end
 
   create_table "wardrobes", force: :cascade do |t|

@@ -12,6 +12,7 @@ module Auth
           sub: user.id,
           jti: SecureRandom.uuid,
           iss: "wearo",
+          ver: user.token_version,
           exp: expires_at.to_i
         }
 
@@ -21,9 +22,11 @@ module Auth
       def decode(token)
         payload = JWT.decode(token, secret, true, algorithm: ALGORITHM).first.with_indifferent_access
         raise RevokedTokenError if JwtDenylist.revoked?(payload[:jti])
+        user = User.find(payload[:sub])
+        raise RevokedTokenError unless payload[:ver].to_i == user.token_version
 
         payload
-      rescue JWT::DecodeError => e
+      rescue JWT::DecodeError, ActiveRecord::RecordNotFound => e
         raise DecodeError, e.message
       end
 

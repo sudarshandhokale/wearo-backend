@@ -207,6 +207,15 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    it "requires recorded AI processing consent" do
+      user.update_column(:ai_processing_consent_at, nil)
+
+      post "/api/v1/stylist/recommendations", params: { prompt: "Dinner" }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("consent.ai_processing_required"))
+    end
+
     it "returns a localized generic error without exposing internal exception details" do
       allow(Stylist::Recommend).to receive(:call).and_raise(StandardError, "sensitive internal details")
 

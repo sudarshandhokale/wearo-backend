@@ -1,14 +1,19 @@
 module Api
   module V1
     class AuthController < BaseController
-      skip_before_action :authenticate_user!, only: %i[register login]
+      skip_before_action :authenticate_user!, only: %i[
+        register login confirm_email resend_confirmation forgot_password reset_password
+      ]
 
       def register
         user = User.new(register_params)
 
         if user.save
-          set_authorization_header(user)
-          success_response(data: user, serializer: User::SessionSerializer, status: :created)
+          AccountMailer.email_confirmation(user).deliver_later
+          success_response(
+            data: { message: I18n.t("auth.registration_pending_confirmation") },
+            status: :created
+          )
         else
           error_response(error: { message: I18n.t("auth.registration_failed"), details: user.errors.to_hash }, status: :unprocessable_entity)
         end
@@ -17,13 +22,50 @@ module Api
       def login
         user = User.find_by(email: auth_params[:email].to_s.downcase.strip)
 
-        if user&.valid_password?(auth_params[:password])
+        if user&.valid_password?(auth_params[:password]) && user.confirmed?
           update_trackable(user)
           set_authorization_header(user)
           success_response(data: user, serializer: User::SessionSerializer)
+        elsif user&.valid_password?(auth_params[:password])
+          error_response(error: { message: I18n.t("auth.email_not_confirmed") }, status: :forbidden)
         else
           error_response(error: { message: I18n.t("auth.invalid_login") }, status: :unauthorized)
         end
+      end
+
+      def confirm_email
+        user = AccountTokens.verify_confirmation(params[:token].to_s)
+        user.update!(confirmed_at: user.confirmed_at || Time.current)
+        set_authorization_header(user)
+        success_response(data: user, serializer: User::SessionSerializer)
+      rescue AccountTokens::InvalidTokenError
+        error_response(error: { message: I18n.t("auth.invalid_or_expired_token") }, status: :unprocessable_entity)
+      end
+
+      def resend_confirmation
+        user = User.find_by(email: email_param)
+        AccountMailer.email_confirmation(user).deliver_later if user.present? && !user.confirmed?
+        success_response(data: { message: I18n.t("auth.confirmation_sent") }, status: :accepted)
+      end
+
+      def forgot_password
+        user = User.find_by(email: email_param)
+        AccountMailer.password_reset(user).deliver_later if user.present?
+        success_response(data: { message: I18n.t("auth.password_reset_sent") }, status: :accepted)
+      end
+
+      def reset_password
+        user = AccountTokens.verify_password_reset(params[:token].to_s)
+        if user.update(password_params)
+          success_response(data: { message: I18n.t("auth.password_reset_completed") })
+        else
+          error_response(
+            error: { message: I18n.t("auth.password_reset_failed"), details: user.errors.to_hash },
+            status: :unprocessable_entity
+          )
+        end
+      rescue AccountTokens::InvalidTokenError
+        error_response(error: { message: I18n.t("auth.invalid_or_expired_token") }, status: :unprocessable_entity)
       end
 
       def refresh
@@ -39,11 +81,32 @@ module Api
       private
 
       def register_params
-        params.require(:user).permit(:first_name, :last_name, :email, :password, :password_confirmation, :timezone, :country_code, :preferred_city)
+        params.require(:user).permit(
+          :first_name,
+          :last_name,
+          :email,
+          :password,
+          :password_confirmation,
+          :timezone,
+          :country_code,
+          :preferred_city,
+          :accept_terms,
+          :accept_privacy,
+          :accept_ai_processing,
+          :confirm_adult
+        )
       end
 
       def auth_params
         params.require(:user).permit(:email, :password)
+      end
+
+      def password_params
+        params.require(:user).permit(:password, :password_confirmation)
+      end
+
+      def email_param
+        params.require(:user).permit(:email)[:email].to_s.downcase.strip
       end
 
       def update_trackable(user)

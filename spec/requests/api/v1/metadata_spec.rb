@@ -18,6 +18,12 @@ RSpec.describe "API v1 metadata", type: :request do
         "label" => "Europe/Berlin"
       )
       expect(body.dig("data", "timezone_countries", "Europe/Berlin")).to eq("DE")
+      expect(body.dig("data", "legal")).to include(
+        "minimum_age" => 18,
+        "ai_processing_required" => true,
+        "full_body_image_consent_required" => true
+      )
+      expect(body.dig("data", "legal", "terms", "version")).to eq(User::TERMS_VERSION)
       expect(body.dig("data", "style_profile", "preferred_styles")).to include(
         "key" => "minimal",
         "label" => "Minimal"
