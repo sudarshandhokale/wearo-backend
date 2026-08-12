@@ -32,4 +32,5 @@ RSpec.configure do |config|
   config.include ActiveSupport::Testing::TimeHelpers
   config.include FactoryBot::Syntax::Methods
   config.include AuthenticationHelper, type: :request
+  config.include UploadHelper, type: :request
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_11_160100) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_11_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,34 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_11_160100) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "clothing_items", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "wardrobe_id", null: false
+    t.string "name"
+    t.string "category"
+    t.string "subcategory"
+    t.string "primary_color"
+    t.jsonb "secondary_colors", default: [], null: false
+    t.string "pattern"
+    t.string "material"
+    t.jsonb "season_tags", default: [], null: false
+    t.jsonb "occasion_tags", default: [], null: false
+    t.jsonb "style_tags", default: [], null: false
+    t.integer "formality_score"
+    t.string "status", default: "uploaded", null: false
+    t.jsonb "ai_metadata", default: {}, null: false
+    t.datetime "ai_analyzed_at"
+    t.datetime "discarded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["discarded_at"], name: "index_clothing_items_on_discarded_at"
+    t.index ["user_id", "category"], name: "index_clothing_items_on_user_id_and_category"
+    t.index ["user_id", "primary_color"], name: "index_clothing_items_on_user_id_and_primary_color"
+    t.index ["user_id", "status"], name: "index_clothing_items_on_user_id_and_status"
+    t.index ["user_id"], name: "index_clothing_items_on_user_id"
+    t.index ["wardrobe_id"], name: "index_clothing_items_on_wardrobe_id"
   end
 
   create_table "jwt_denylist", force: :cascade do |t|
@@ -92,6 +120,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_11_160100) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "clothing_items", "users"
+  add_foreign_key "clothing_items", "wardrobes"
   add_foreign_key "style_profiles", "users"
   add_foreign_key "wardrobes", "users"
 end

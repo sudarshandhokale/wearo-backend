@@ -4,6 +4,10 @@ en:
     logged_out: "Logged out"
     registration_failed: "Registration failed"
     token_refreshed: "Token refreshed"
+  clothing_items:
+    create_failed: "Clothing item creation failed"
+    deleted: "Clothing item deleted"
+    update_failed: "Clothing item update failed"
   errors:
     messages:
       unauthorized: "Unauthorized"

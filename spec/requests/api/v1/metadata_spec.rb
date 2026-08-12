@@ -21,6 +21,13 @@ RSpec.describe "API v1 metadata", type: :request do
         "key" => "regular",
         "label" => "Regular"
       )
+      expect(body.dig("data", "clothing_items", "categories")).to include(
+        hash_including("key" => "top", "label" => "Top")
+      )
+      expect(body.dig("data", "clothing_items", "statuses")).to include(
+        "key" => "ready",
+        "label" => "Ready"
+      )
     end
 
     it "requires authentication" do

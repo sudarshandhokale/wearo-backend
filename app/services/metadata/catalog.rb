@@ -89,7 +89,11 @@ module Metadata
     def self.all
       {
         countries: countries,
-        style_profile: serialize_options(STYLE_OPTIONS)
+        style_profile: serialize_options(STYLE_OPTIONS),
+        clothing_items: {
+          categories: ClothingTaxonomy.categories_for_metadata,
+          statuses: ClothingTaxonomy.statuses_for_metadata
+        }
       }
     end
 

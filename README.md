@@ -82,3 +82,17 @@ Auth endpoints follow the SAFEGO-style response convention:
 
 Successful register, login, and refresh responses include the JWT in the
 `Authorization` response header.
+
+Clothing items:
+
+```text
+GET    /api/v1/clothing_items
+POST   /api/v1/clothing_items
+GET    /api/v1/clothing_items/:id
+PATCH  /api/v1/clothing_items/:id
+DELETE /api/v1/clothing_items/:id
+POST   /api/v1/clothing_items/:id/reanalyze
+```
+
+Clothing item images are attached through Active Storage. Image responses return
+a signed blob id and a Rails storage proxy path.

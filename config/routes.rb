@@ -12,6 +12,9 @@ Rails.application.routes.draw do
       resource :me, only: %i[show update], controller: :me
       resource :style_profile, only: %i[show update], controller: :style_profiles
       resource :wardrobe, only: :show, controller: :wardrobes
+      resources :clothing_items do
+        post :reanalyze, on: :member
+      end
     end
   end
 
