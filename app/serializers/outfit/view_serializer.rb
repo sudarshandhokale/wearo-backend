@@ -14,7 +14,7 @@ class Outfit::ViewSerializer < ApplicationSerializer
              :feedback_note,
              :status_updated_at,
              :recommended_for,
-             :cover_image,
+             :cover_images,
              :items,
              :created_at,
              :updated_at
@@ -44,11 +44,11 @@ class Outfit::ViewSerializer < ApplicationSerializer
     end
   end
 
-  def cover_image
+  def cover_images
     visualization = preferred_visualization
-    return visualization_cover(visualization) if visualization
+    return [ visualization_cover(visualization) ] if visualization
 
-    item_cover
+    item_covers
   end
 
   def created_at
@@ -76,17 +76,19 @@ class Outfit::ViewSerializer < ApplicationSerializer
     )
   end
 
-  def item_cover
-    clothing_item = object.outfit_items.map(&:clothing_item).find { |item| item.polished_image.attached? || item.image.attached? }
-    return unless clothing_item
+  def item_covers
+    object.outfit_items.filter_map do |outfit_item|
+      clothing_item = outfit_item.clothing_item
+      attachment = clothing_item.polished_image.attached? ? clothing_item.polished_image : clothing_item.image
+      next unless attachment.attached?
 
-    attachment = clothing_item.polished_image.attached? ? clothing_item.polished_image : clothing_item.image
-    attachment_payload(attachment).merge(
-      kind: clothing_item.polished_image.attached? ? "polished_item" : "original_item",
-      generated: clothing_item.polished_image.attached?,
-      personalized: false,
-      clothing_item_id: clothing_item.id
-    )
+      attachment_payload(attachment).merge(
+        kind: clothing_item.polished_image.attached? ? "polished_item" : "original_item",
+        generated: clothing_item.polished_image.attached?,
+        personalized: false,
+        clothing_item_id: clothing_item.id
+      )
+    end
   end
 
   def attachment_payload(attachment)

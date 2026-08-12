@@ -135,12 +135,13 @@ After analysis, a separate polished catalog image is generated for wardrobe disp
 Clients can use `display_image`, which prefers the polished image and falls back to
 the original. Polishing failures do not fail clothing metadata analysis.
 
-Both clothing-item and outfit responses also provide one stable `cover_image`.
-For clothing items it prefers the polished catalog image over the original. For
-outfits it prefers a ready try-on, then a ready flat-lay, then the first outfit
-item's polished or original image. Clients can render `cover_image.url` without
-implementing these fallback rules; `kind` and provenance fields remain available
-for labels and diagnostics.
+Clothing-item responses provide one stable `cover_image`, preferring the polished
+catalog image over the original. Outfit responses provide `cover_images` for
+overview cards. When a ready visualization exists, the array contains only the
+preferred try-on or flat-lay visualization. Otherwise it contains every available
+outfit-item image in outfit order so clients can render a collage instead of
+representing the outfit with one garment. `kind` and provenance fields remain
+available for labels and diagnostics.
 
 Image uploads and `reanalyze` requests enqueue `AnalyzeClothingItemJob`. The job
 uses the OpenAI Responses API with strict structured output, normalizes the result,
