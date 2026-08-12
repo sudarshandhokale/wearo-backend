@@ -33,7 +33,7 @@ RSpec.describe Stylist::Providers::Openai do
             content: [
               {
                 type: "output_text",
-                text: { rankings: [ { candidate_id: 1, explanation: "Balanced and appropriate." } ] }.to_json
+                text: { rankings: [ { candidate_id: 1, name: "Navy Dinner Edit", explanation: "Balanced and appropriate." } ] }.to_json
               }
             ]
           }
@@ -45,7 +45,7 @@ RSpec.describe Stylist::Providers::Openai do
     result = provider.call(context: { "occasion" => "dinner" }, candidates: candidates, user_id: 123)
 
     expect(request).to have_been_requested.once
-    expect(result[:rankings]).to eq([ { "candidate_id" => 1, "explanation" => "Balanced and appropriate." } ])
+    expect(result[:rankings]).to eq([ { "candidate_id" => 1, "name" => "Navy Dinner Edit", "explanation" => "Balanced and appropriate." } ])
     expect(result[:metadata]).to include("provider" => "openai", "model" => "test-model")
   end
 
@@ -68,7 +68,7 @@ RSpec.describe Stylist::Providers::Openai do
           output: [
             {
               type: "message",
-              content: [ { type: "output_text", text: { rankings: [ { candidate_id: 1, explanation: "Ready." } ] }.to_json } ]
+              content: [ { type: "output_text", text: { rankings: [ { candidate_id: 1, name: "Easy Evening", explanation: "Ready." } ] }.to_json } ]
             }
           ],
           usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 }

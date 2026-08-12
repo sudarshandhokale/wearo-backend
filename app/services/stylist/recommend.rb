@@ -3,11 +3,11 @@ module Stylist
     DEFAULT_DAILY_RECOMMENDATION_LIMIT = 50
 
     class << self
-      def call(user:, prompt:, city: nil)
+      def call(user:, prompt:)
         prompt = Ai::Guardrails.user_prompt!(prompt.to_s)
         recommendation_request = create_recommendation_request!(user, prompt)
         extracted_context = ExtractContext.call(prompt, timezone: user.timezone)
-        external_context = fetch_external_context(user, extracted_context, city)
+        external_context = fetch_external_context(user, extracted_context)
         recommendation_context = enriched_context(extracted_context.attributes, external_context)
         personalization = Personalization::Snapshot.call(user: user, as_of: extracted_context.recommended_for&.to_date || Time.current.to_date)
         candidates = CandidateSelector.call(user: user, context: recommendation_context)
@@ -93,6 +93,7 @@ module Stylist
               occasion: extracted_context.attributes["occasion"],
               context: context,
               weather_context: Array(weather).find { |day| day["date"] == extracted_context.recommended_for&.to_date&.iso8601 } || Array(weather).first || {},
+              name: ranked_combination.name,
               recommendation_score: ranked_combination.score,
               score_breakdown: ranked_combination.score_breakdown,
               explanation: ranked_combination.explanation,
@@ -145,13 +146,11 @@ module Stylist
         )
       end
 
-      def fetch_external_context(user, extracted_context, city)
-        return ExternalContext::Result.new(city: nil, country_code: user.country_code, weather: []) if city.blank?
-
+      def fetch_external_context(user, extracted_context)
         date = extracted_context.recommended_for&.to_date || Time.current.in_time_zone(user.timezone).to_date
         ExternalContext::Fetch.call(
           user: user,
-          city: city,
+          city: extracted_context.city,
           start_date: date,
           end_date: date
         )

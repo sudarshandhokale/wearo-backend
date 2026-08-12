@@ -6,7 +6,7 @@ module Api
       def index
         outfits = current_user.outfits
                               .recent_first
-                              .includes(outfit_items: { clothing_item: { image_attachment: :blob } })
+                              .includes(Outfit.cover_media_includes)
                               .page(params[:page])
                               .per(per_page)
         success_response(
@@ -63,12 +63,12 @@ module Api
 
       def set_outfit
         @outfit = current_user.outfits
-                              .includes(outfit_items: { clothing_item: { image_attachment: :blob } })
+                              .includes(Outfit.cover_media_includes)
                               .find(params[:id])
       end
 
       def outfit_params
-        params.require(:outfit).permit(:status, :rating, :feedback_note)
+        params.require(:outfit).permit(:name, :status, :rating, :feedback_note)
       end
 
       def wear_params

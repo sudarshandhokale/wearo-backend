@@ -33,6 +33,18 @@ module Stylist
       "fall" => /\b(fall|autumn)\b/i,
       "winter" => /\b(winter|cold|snow)\b/i
     }.freeze
+    LOCATION_WORD = "[[:alpha:]][[:alpha:]'.-]*"
+    LOCATION_END = "(?=\\s+(?:on|for|this|next|today|tomorrow|tonight|with|during|after|before)\\b|[,.!?]|\\z)"
+    LOCATION_PATTERNS = [
+      /\b(?:going|traveling|travelling|flying|heading)\s+to\s+(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i,
+      /\b(?:trip|vacation|holiday)\s+(?:in|to)\s+(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i,
+      /\b(?:destination|city|location)\s+(?:is|:)\s*(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i,
+      /\b(?:in|near|around|visiting|visit)\s+(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i
+    ].freeze
+    NON_LOCATION_WORDS = %w[
+      a an the work office dinner restaurant party concert wedding festival gym park
+      spring summer fall autumn winter cold hot warm rain rainy snow snowy
+    ].freeze
 
     class << self
       def call(prompt, timezone:, now: Time.current)
@@ -48,7 +60,8 @@ module Stylist
 
         ExtractedContext.new(
           attributes: attributes,
-          recommended_for: extract_recommended_for(prompt, local_now)
+          recommended_for: extract_recommended_for(prompt, local_now),
+          city: extract_city(prompt)
         )
       end
 
@@ -68,6 +81,16 @@ module Stylist
 
         days_ahead = (Date::DAYNAMES.index(weekday) - local_now.wday) % 7
         (local_now + days_ahead.days).change(hour: 12)
+      end
+
+      def extract_city(prompt)
+        candidate = LOCATION_PATTERNS.filter_map { |pattern| prompt.match(pattern)&.[](1) }.first
+        return if candidate.blank?
+
+        words = candidate.downcase.scan(/[[:alpha:]]+/)
+        return if words.empty? || words.any? { |word| NON_LOCATION_WORDS.include?(word) }
+
+        candidate.squish
       end
     end
   end

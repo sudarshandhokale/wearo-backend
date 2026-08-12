@@ -75,11 +75,33 @@ RSpec.describe "API v1 me", type: :request do
   describe "DELETE /api/v1/me/full_body_image" do
     it "deletes the saved full-body profile image" do
       user.full_body_image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "profile.png", content_type: "image/png")
+      profile_try_on = create(
+        :outfit_visualization,
+        user: user,
+        mode: "try_on",
+        metadata: { "reference_source" => "profile" }
+      )
+      request_try_on = create(
+        :outfit_visualization,
+        user: user,
+        outfit: profile_try_on.outfit,
+        mode: "flat_lay",
+        metadata: { "reference_source" => "request" }
+      )
+      request_try_on.reference_image.attach(
+        io: StringIO.new(UploadHelper::PNG_BYTES),
+        filename: "request.png",
+        content_type: "image/png"
+      )
+      request_try_on.update!(mode: "try_on")
+      flat_lay = create(:outfit_visualization, user: user, outfit: profile_try_on.outfit)
 
       delete "/api/v1/me/full_body_image", headers: auth_headers(user)
 
       expect(response).to have_http_status(:ok)
       expect(user.reload.full_body_image).not_to be_attached
+      expect(OutfitVisualization.where(id: profile_try_on.id)).not_to exist
+      expect(OutfitVisualization.where(id: [ request_try_on.id, flat_lay.id ]).count).to eq(2)
       expect(response.parsed_body.dig("data", "message")).to eq(I18n.t("profile.full_body_image_deleted"))
     end
   end

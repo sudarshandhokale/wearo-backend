@@ -111,11 +111,23 @@ GET    /api/v1/clothing_items/:id
 PATCH  /api/v1/clothing_items/:id
 DELETE /api/v1/clothing_items/:id
 POST   /api/v1/clothing_items/:id/reanalyze
+POST   /api/v1/clothing_items/:id/polish
 ```
 
 Clothing item images are attached through Active Storage. Image responses return
 a signed blob id and a Rails storage proxy path. Exact duplicate image files are
 rejected within a user's active wardrobe; discarded items do not block re-upload.
+The original upload remains the source of truth for analysis and outfit generation.
+After analysis, a separate polished catalog image is generated for wardrobe display.
+Clients can use `display_image`, which prefers the polished image and falls back to
+the original. Polishing failures do not fail clothing metadata analysis.
+
+Both clothing-item and outfit responses also provide one stable `cover_image`.
+For clothing items it prefers the polished catalog image over the original. For
+outfits it prefers a ready try-on, then a ready flat-lay, then the first outfit
+item's polished or original image. Clients can render `cover_image.url` without
+implementing these fallback rules; `kind` and provenance fields remain available
+for labels and diagnostics.
 
 Image uploads and `reanalyze` requests enqueue `AnalyzeClothingItemJob`. The job
 uses the OpenAI Responses API with strict structured output, normalizes the result,
@@ -126,6 +138,8 @@ Configure clothing analysis locally with:
 ```text
 OPENAI_API_KEY=...
 OPENAI_CLOTHING_MODEL=gpt-5.6-luna
+OPENAI_CLOTHING_IMAGE_MODEL=gpt-image-2
+CLOTHING_IMAGE_AUTO_POLISH_ENABLED=true
 ```
 
 Development uses the in-process Active Job async adapter. Production sends the
@@ -188,6 +202,19 @@ server-derived occasion, formality, activity, and season values. Clothing-model
 text and tags are bounded and checked before persistence, and only normalized
 metadata is eligible for later ranking. Unsafe or injected explanations are
 discarded and deterministic ranking is used instead.
+
+Outfit visualization is generated on demand in two modes. `flat_lay` creates a
+clean outfit-only composition from available garment photos. `try_on` uses a
+one-time request image or the user's consented full-body profile image. If a
+try-on request has no person reference, the API queues a flat lay instead and
+returns `guidance.action: "upload_full_body_photo"` so the client can offer a
+personalized follow-up without failing the request. Image output is styling
+inspiration, not a guarantee of garment fit or exact reproduction.
+
+Completed and in-progress visualizations are reused using a content fingerprint.
+A flat lay is regenerated only when its garment images change. A try-on is
+regenerated when either its garment images or person reference changes. Flat-lay
+and try-on outputs are stored independently in private Active Storage.
 
 A recommendation needs either a top and bottom or one ready one-piece garment
 such as a dress, jumpsuit, or romper, or a complete set such as a co-ord, suit,

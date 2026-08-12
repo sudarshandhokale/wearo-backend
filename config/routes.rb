@@ -26,6 +26,7 @@ Rails.application.routes.draw do
       resource :wardrobe, only: :show, controller: :wardrobes
       resources :clothing_items do
         post :reanalyze, on: :member
+        post :polish, on: :member
       end
       resources :recommendation_requests, only: %i[index show]
       resources :outfits, only: %i[index show update] do

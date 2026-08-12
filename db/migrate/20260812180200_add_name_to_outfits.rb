@@ -1,0 +1,5 @@
+class AddNameToOutfits < ActiveRecord::Migration[8.0]
+  def change
+    add_column :outfits, :name, :string
+  end
+end

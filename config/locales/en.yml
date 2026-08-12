@@ -28,6 +28,7 @@ en:
     deleted: "Clothing item deleted"
     duplicate_image: "This clothing item image is already in your wardrobe"
     image_required: "A clothing item image is required"
+    polish_failed: "The clothing item image could not be polished"
     update_failed: "Clothing item update failed"
   errors:
     messages:
@@ -64,6 +65,11 @@ en:
     general_occasion: "your plans"
     insufficient_wardrobe: "Add a ready one-piece garment, complete set, top and bottom, or drape and top to receive recommendations"
     invalid_prompt: "Describe where you are going or what you are dressing for"
+    outfit_names:
+      generic: "Styled Wardrobe Edit"
+      with_occasion: "%{descriptor} %{occasion} Edit"
+      without_descriptor: "%{occasion} Edit"
+      without_occasion: "%{descriptor} Edit"
     recommendation_limit_reached: "You have reached today's recommendation limit"
     suggestions:
       add_accessory:
@@ -93,6 +99,11 @@ en:
   visualizations:
     create_failed: "The outfit visualization could not be requested"
     daily_limit_reached: "You have reached today's outfit visualization limit"
+    guidance:
+      fallback_to_flat_lay: "A flat-lay visualization is being created because no full-body photo is available. Upload one to visualize this outfit on you."
+      personalized: "This visualization uses your full-body reference as personalized styling inspiration."
+      try_on_available: "Your saved full-body photo can be used to create a personalized try-on."
+      upload_for_try_on: "Upload a full-body photo to create a personalized try-on of this outfit."
   consent:
     ai_processing_required: "Accept AI processing before using this feature"
     full_body_image_required: "Consent is required before uploading a full-body image"

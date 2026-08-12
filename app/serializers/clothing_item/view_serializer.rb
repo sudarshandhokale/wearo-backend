@@ -19,6 +19,10 @@ class ClothingItem::ViewSerializer < ApplicationSerializer
              :ai_metadata,
              :ai_analyzed_at,
              :image,
+             :polished_image,
+             :display_image,
+             :cover_image,
+             :image_polish,
              :created_at,
              :updated_at
 
@@ -35,11 +39,39 @@ class ClothingItem::ViewSerializer < ApplicationSerializer
   end
 
   def image
-    return unless object.image.attached?
+    attachment_payload(object.image)
+  end
+
+  def polished_image
+    attachment_payload(object.polished_image)
+  end
+
+  def display_image
+    polished_image || image
+  end
+
+  def cover_image
+    return unless (attachment = object.polished_image.attached? ? object.polished_image : object.image).attached?
+
+    attachment_payload(attachment).merge(
+      kind: object.polished_image.attached? ? "polished_item" : "original_item",
+      generated: object.polished_image.attached?,
+      clothing_item_id: object.id
+    )
+  end
+
+  def image_polish
+    object.ai_metadata.fetch("image_polish", { "status" => "not_requested" })
+  end
+
+  private
+
+  def attachment_payload(attachment)
+    return unless attachment.attached?
 
     {
-      signed_id: object.image.blob.signed_id,
-      url: Rails.application.routes.url_helpers.api_v1_medium_path(object.image.blob.signed_id)
+      signed_id: attachment.blob.signed_id,
+      url: Rails.application.routes.url_helpers.api_v1_medium_path(attachment.blob.signed_id)
     }
   end
 end

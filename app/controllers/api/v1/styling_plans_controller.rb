@@ -43,7 +43,7 @@ module Api
       end
 
       def loaded_scope
-        current_user.styling_plans.includes(entries: { outfit: { outfit_items: { clothing_item: { image_attachment: :blob } } } })
+        current_user.styling_plans.includes(entries: { outfit: Outfit.cover_media_includes })
       end
 
       def styling_plan_params

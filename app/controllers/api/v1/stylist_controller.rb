@@ -6,8 +6,7 @@ module Api
       def recommendations
         result = Stylist::Recommend.call(
           user: current_user,
-          prompt: params[:prompt],
-          city: params[:city]
+          prompt: params[:prompt]
         )
         success_response(data: result, serializer: Stylist::RecommendationSerializer, status: :created)
       rescue Stylist::InvalidPromptError

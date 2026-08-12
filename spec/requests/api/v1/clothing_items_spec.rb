@@ -60,6 +60,13 @@ RSpec.describe "API v1 clothing items", type: :request do
       expect(item.cultural_tags).to eq([ "indian_traditional" ])
       expect(response.parsed_body.dig("data", "garment_type")).to eq("Jutti")
       expect(response.parsed_body.dig("data", "image", "signed_id")).to be_present
+      expect(response.parsed_body.dig("data", "display_image", "signed_id")).to eq(response.parsed_body.dig("data", "image", "signed_id"))
+      expect(response.parsed_body.dig("data", "cover_image")).to include(
+        "kind" => "original_item",
+        "generated" => false,
+        "clothing_item_id" => item.id
+      )
+      expect(response.parsed_body.dig("data", "image_polish", "status")).to eq("waiting_for_analysis")
     end
 
     it "rejects invalid taxonomy values" do
@@ -260,6 +267,37 @@ RSpec.describe "API v1 clothing items", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("clothing_items.image_required"))
       expect(item.reload).to be_ready
+    end
+  end
+
+  describe "POST /api/v1/clothing_items/:id/polish" do
+    it "queues a fresh polished catalog image while retaining the original" do
+      item = create(:clothing_item, user: user, wardrobe: user.wardrobe)
+      item.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "source.png", content_type: "image/png")
+      item.save!
+      original_blob = item.image.blob
+
+      expect do
+        post "/api/v1/clothing_items/#{item.id}/polish", headers: auth_headers(user)
+      end.to have_enqueued_job(GenerateClothingItemPolishedImageJob).with(item.id, item.image_checksum)
+
+      expect(response).to have_http_status(:accepted)
+      expect(item.reload.image.blob).to eq(original_blob)
+      expect(item.ai_metadata.dig("image_polish", "status")).to eq("queued")
+    end
+
+
+    it "does not enqueue a duplicate request while polishing is already queued" do
+      item = create(:clothing_item, user: user, wardrobe: user.wardrobe)
+      item.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "source.png", content_type: "image/png")
+      item.save!
+      item.update!(ai_metadata: { "image_polish" => { "status" => "queued", "source_checksum" => item.image_checksum } })
+
+      expect do
+        post "/api/v1/clothing_items/#{item.id}/polish", headers: auth_headers(user)
+      end.not_to have_enqueued_job(GenerateClothingItemPolishedImageJob)
+
+      expect(response).to have_http_status(:accepted)
     end
   end
 end

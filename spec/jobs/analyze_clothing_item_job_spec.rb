@@ -36,7 +36,9 @@ RSpec.describe AnalyzeClothingItemJob, type: :job do
     )
     allow(ClothingAnalysis::Analyze).to receive(:call).with(item).and_return(result)
 
-    described_class.perform_now(item.id)
+    expect do
+      described_class.perform_now(item.id)
+    end.to have_enqueued_job(GenerateClothingItemPolishedImageJob).with(item.id, item.image_checksum)
 
     item.reload
     expect(item).to be_ready
@@ -44,6 +46,8 @@ RSpec.describe AnalyzeClothingItemJob, type: :job do
     expect(item.subcategory).to eq("t_shirt")
     expect(item.ai_analyzed_at).to be_present
     expect(item.ai_metadata).to include("provider" => "openai", "confidence" => 0.92)
+    expect(item.ai_metadata.dig("image_polish", "status")).to eq("queued")
+    expect(item.ai_metadata.dig("image_polish", "source_checksum")).to eq(item.image_checksum)
   end
 
   it "marks the item failed when analysis raises an error" do

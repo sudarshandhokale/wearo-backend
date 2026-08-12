@@ -16,6 +16,7 @@ RSpec.describe Stylist::ExtractContext do
       "activity" => "social"
     )
     expect(result.recommended_for.hour).to eq(19)
+    expect(result.city).to be_nil
   end
 
   it "rejects an empty prompt" do
@@ -43,6 +44,15 @@ RSpec.describe Stylist::ExtractContext do
       "activity" => "music_event",
       "formality" => "casual"
     )
+    expect(result.city).to eq("Berlin")
     expect(result.recommended_for.wday).to eq(6)
+  end
+
+  it "extracts multi-word destinations without treating seasons as cities" do
+    travel = described_class.call("I am traveling to New York next Friday", timezone: "Europe/Berlin")
+    seasonal = described_class.call("Something comfortable in summer", timezone: "Europe/Berlin")
+
+    expect(travel.city).to eq("New York")
+    expect(seasonal.city).to be_nil
   end
 end

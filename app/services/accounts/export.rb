@@ -22,13 +22,13 @@ module Accounts
       private
 
       def clothing_items(user)
-        user.clothing_items.includes(image_attachment: :blob).order(:created_at).map do |item|
+        user.clothing_items.includes(image_attachment: :blob, polished_image_attachment: :blob).order(:created_at).map do |item|
           ClothingItem::ViewSerializer.new(item).serializable_hash
         end
       end
 
       def outfits(user)
-        user.outfits.includes(outfit_items: { clothing_item: { image_attachment: :blob } }).order(:created_at).map do |outfit|
+        user.outfits.includes(Outfit.cover_media_includes).order(:created_at).map do |outfit|
           Outfit::ViewSerializer.new(outfit).serializable_hash
         end
       end
@@ -41,7 +41,7 @@ module Accounts
       end
 
       def styling_plans(user)
-        user.styling_plans.includes(entries: { outfit: { outfit_items: { clothing_item: { image_attachment: :blob } } } })
+        user.styling_plans.includes(entries: { outfit: Outfit.cover_media_includes })
             .order(:created_at).map { |plan| StylingPlan::ViewSerializer.new(plan).serializable_hash }
       end
 

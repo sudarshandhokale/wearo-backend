@@ -10,6 +10,7 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
           items: combination.items,
           score: combination.score,
           score_breakdown: combination.score_breakdown,
+          name: "Evening Essentials",
           explanation: "A strong match for the requested occasion.",
           ranking_metadata: { "provider" => "test" }
         )
@@ -42,6 +43,7 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       expect(body.dig("recommendation", "status")).to eq("completed")
       expect(body.dig("recommendation", "ranking_source")).to eq("ai")
       expect(body.fetch("outfits").length).to eq(3)
+      expect(body.fetch("outfits").pluck("name")).to all(eq("Evening Essentials"))
       expect(response_item_ids).to all(be_in(owned_items.map(&:id)))
       expect(response_item_ids).not_to include(other_item.id)
       expect(user.recommendation_requests.last.outfits.count).to eq(3)
@@ -90,8 +92,7 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       )
 
       post "/api/v1/stylist/recommendations", params: {
-        prompt: "Casual plans today",
-        city: "Berlin"
+        prompt: "Casual plans in Berlin today"
       }, headers: auth_headers(user)
 
       suggestion = response.parsed_body.dig("data", "suggestions").find { |item| item["key"] == "bring_rain_protection" }
@@ -103,6 +104,47 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
         "suggested_subcategories" => %w[umbrella raincoat water_resistant_shoes]
       )
       expect(suggestion.fetch("question")).to be_present
+    end
+
+    it "uses a prompt destination instead of the saved profile city" do
+      user.update!(preferred_city: "Hamburg")
+      create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "one_piece", subcategory: "dress", status: "ready")
+      allow(ExternalContext::Fetch).to receive(:call).and_return(
+        ExternalContext::Result.new(city: "Paris", country_code: "FR", weather: [])
+      )
+
+      post "/api/v1/stylist/recommendations", params: {
+        prompt: "Dinner in Paris tomorrow",
+        city: "Munich"
+      }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:created)
+      expect(ExternalContext::Fetch).to have_received(:call).with(
+        user: user,
+        city: "Paris",
+        start_date: Date.tomorrow,
+        end_date: Date.tomorrow
+      )
+      expect(response.parsed_body.dig("data", "context", "city")).to eq("Paris")
+    end
+
+    it "falls back to the saved profile city when the prompt has no destination" do
+      user.update!(preferred_city: "Hamburg")
+      create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "one_piece", subcategory: "dress", status: "ready")
+      allow(ExternalContext::Fetch).to receive(:call).and_return(
+        ExternalContext::Result.new(city: "Hamburg", country_code: "DE", weather: [])
+      )
+
+      post "/api/v1/stylist/recommendations", params: { prompt: "Dinner tomorrow" }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:created)
+      expect(ExternalContext::Fetch).to have_received(:call).with(
+        user: user,
+        city: nil,
+        start_date: Date.tomorrow,
+        end_date: Date.tomorrow
+      )
+      expect(response.parsed_body.dig("data", "context", "city")).to eq("Hamburg")
     end
 
 

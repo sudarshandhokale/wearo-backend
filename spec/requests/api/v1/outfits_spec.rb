@@ -17,6 +17,7 @@ RSpec.describe "API v1 outfits", type: :request do
       expect(response).to have_http_status(:ok)
       expect(body).to include(
         "id" => outfit.id,
+        "name" => "Navy Polo Dinner Edit",
         "recommendation_score" => 92.0,
         "status" => "recommended"
       )
@@ -35,6 +36,46 @@ RSpec.describe "API v1 outfits", type: :request do
 
       expect(response).to have_http_status(:not_found)
       expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("errors.messages.not_found"))
+    end
+
+    it "uses try-on, flat-lay, polished item, and original item cover fallbacks in order" do
+      outfit = create(:outfit, user: user)
+      item = create(:clothing_item, user: user, wardrobe: user.wardrobe)
+      item.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "original.png", content_type: "image/png")
+      item.polished_image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "polished.png", content_type: "image/png")
+      create(:outfit_item, outfit: outfit, clothing_item: item, role: "top", position: 0)
+
+      get "/api/v1/outfits/#{outfit.id}", headers: auth_headers(user)
+      expect(response.parsed_body.dig("data", "cover_image")).to include(
+        "kind" => "polished_item",
+        "clothing_item_id" => item.id
+      )
+
+      item.polished_image.purge
+      get "/api/v1/outfits/#{outfit.id}", headers: auth_headers(user)
+      expect(response.parsed_body.dig("data", "cover_image")).to include(
+        "kind" => "original_item",
+        "clothing_item_id" => item.id
+      )
+
+      flat_lay = create(:outfit_visualization, user: user, outfit: outfit, mode: "flat_lay", status: "ready")
+      flat_lay.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "flat-lay.png", content_type: "image/png")
+      get "/api/v1/outfits/#{outfit.id}", headers: auth_headers(user)
+      expect(response.parsed_body.dig("data", "cover_image")).to include(
+        "kind" => "outfit_flat_lay",
+        "visualization_id" => flat_lay.id
+      )
+
+      try_on = create(:outfit_visualization, user: user, outfit: outfit, mode: "flat_lay", status: "ready")
+      try_on.reference_image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "person.png", content_type: "image/png")
+      try_on.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "try-on.png", content_type: "image/png")
+      try_on.update!(mode: "try_on")
+      get "/api/v1/outfits/#{outfit.id}", headers: auth_headers(user)
+      expect(response.parsed_body.dig("data", "cover_image")).to include(
+        "kind" => "outfit_try_on",
+        "personalized" => true,
+        "visualization_id" => try_on.id
+      )
     end
 
     it "requires authentication" do

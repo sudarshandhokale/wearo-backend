@@ -1,8 +1,8 @@
 module Stylist
-  ExtractedContext = Data.define(:attributes, :recommended_for)
+  ExtractedContext = Data.define(:attributes, :recommended_for, :city)
   Combination = Data.define(:items)
   ScoredCombination = Data.define(:items, :score, :score_breakdown)
-  RankedCombination = Data.define(:items, :score, :score_breakdown, :explanation, :ranking_metadata)
+  RankedCombination = Data.define(:items, :score, :score_breakdown, :name, :explanation, :ranking_metadata)
 
   class RecommendationResult
     include ActiveModel::Model

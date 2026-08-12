@@ -1,5 +1,5 @@
 class AiRequest < ApplicationRecord
-  OPERATIONS = %w[clothing_analysis stylist_recommendation outfit_visualization].freeze
+  OPERATIONS = %w[clothing_analysis clothing_image_polish stylist_recommendation outfit_visualization].freeze
 
   belongs_to :user
   belongs_to :trackable, polymorphic: true, optional: true

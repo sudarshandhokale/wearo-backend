@@ -4,6 +4,7 @@ class ClothingItem < ApplicationRecord
   has_many :ai_requests, as: :trackable, dependent: :nullify
 
   has_one_attached :image
+  has_one_attached :polished_image
   has_many :outfit_items, dependent: :destroy
   has_many :outfits, through: :outfit_items
 
@@ -20,6 +21,7 @@ class ClothingItem < ApplicationRecord
   validates :fit, inclusion: { in: ClothingTaxonomy.fit_keys }, allow_blank: true
   validates :formality_score, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 10 }, allow_nil: true
   validates :image, content_type: %w[image/png image/jpeg image/webp], size: { less_than_or_equal_to: 10.megabytes }
+  validates :polished_image, content_type: %w[image/png image/jpeg image/webp], size: { less_than_or_equal_to: 20.megabytes }
   validate :wardrobe_belongs_to_user
   validate :image_is_unique_for_user
   validate :cultural_tags_are_an_array

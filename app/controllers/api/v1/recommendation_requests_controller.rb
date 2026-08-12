@@ -4,7 +4,7 @@ module Api
       def index
         requests = current_user.recommendation_requests
                                .recent_first
-                               .includes(outfits: { outfit_items: { clothing_item: { image_attachment: :blob } } })
+                               .includes(outfits: Outfit.cover_media_includes)
                                .page(params[:page])
                                .per(per_page)
 
@@ -19,7 +19,7 @@ module Api
 
       def show
         request = current_user.recommendation_requests
-                              .includes(outfits: { outfit_items: { clothing_item: { image_attachment: :blob } } })
+                              .includes(outfits: Outfit.cover_media_includes)
                               .find(params[:id])
         success_response(data: request, serializer: RecommendationRequest::ViewSerializer)
       end

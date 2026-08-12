@@ -1,6 +1,7 @@
 class Outfit::ViewSerializer < ApplicationSerializer
   attributes :id,
              :recommendation_request_id,
+             :name,
              :prompt,
              :occasion,
              :context,
@@ -13,12 +14,20 @@ class Outfit::ViewSerializer < ApplicationSerializer
              :feedback_note,
              :status_updated_at,
              :recommended_for,
+             :cover_image,
              :items,
              :created_at,
              :updated_at
 
   def recommendation_score
     object.recommendation_score&.to_f
+  end
+
+  def name
+    object.name.presence || Stylist::OutfitName.call(
+      items: object.outfit_items.map { |outfit_item| [ outfit_item.role, outfit_item.clothing_item ] },
+      occasion: object.occasion
+    )
   end
 
   def recommended_for
@@ -35,11 +44,55 @@ class Outfit::ViewSerializer < ApplicationSerializer
     end
   end
 
+  def cover_image
+    visualization = preferred_visualization
+    return visualization_cover(visualization) if visualization
+
+    item_cover
+  end
+
   def created_at
     format_datetime_value(object.created_at)
   end
 
   def updated_at
     format_datetime_value(object.updated_at)
+  end
+
+  private
+
+  def preferred_visualization
+    object.outfit_visualizations
+          .select { |visualization| visualization.ready? && visualization.image.attached? }
+          .max_by { |visualization| [ visualization.try_on? ? 1 : 0, visualization.created_at ] }
+  end
+
+  def visualization_cover(visualization)
+    attachment_payload(visualization.image).merge(
+      kind: visualization.try_on? ? "outfit_try_on" : "outfit_flat_lay",
+      generated: true,
+      personalized: visualization.try_on?,
+      visualization_id: visualization.id
+    )
+  end
+
+  def item_cover
+    clothing_item = object.outfit_items.map(&:clothing_item).find { |item| item.polished_image.attached? || item.image.attached? }
+    return unless clothing_item
+
+    attachment = clothing_item.polished_image.attached? ? clothing_item.polished_image : clothing_item.image
+    attachment_payload(attachment).merge(
+      kind: clothing_item.polished_image.attached? ? "polished_item" : "original_item",
+      generated: clothing_item.polished_image.attached?,
+      personalized: false,
+      clothing_item_id: clothing_item.id
+    )
+  end
+
+  def attachment_payload(attachment)
+    {
+      signed_id: attachment.blob.signed_id,
+      url: Rails.application.routes.url_helpers.api_v1_medium_path(attachment.blob.signed_id)
+    }
   end
 end

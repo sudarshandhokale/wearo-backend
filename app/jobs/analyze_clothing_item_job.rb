@@ -16,6 +16,7 @@ class AnalyzeClothingItemJob < ApplicationJob
         ai_metadata: result.metadata
       )
     )
+    schedule_image_polish(clothing_item)
   rescue ActiveRecord::RecordNotFound
     nil
   rescue StandardError => error
@@ -23,6 +24,26 @@ class AnalyzeClothingItemJob < ApplicationJob
   end
 
   private
+
+  def schedule_image_polish(clothing_item)
+    return unless ClothingImage.auto_polish_enabled?
+    return if clothing_item.polished_image.attached? &&
+              clothing_item.ai_metadata.dig("image_polish", "source_checksum") == clothing_item.image_checksum
+    return if polish_in_progress_for_current_source?(clothing_item)
+
+    clothing_item.update_column(
+      :ai_metadata,
+      clothing_item.ai_metadata.merge(
+        "image_polish" => { "status" => "queued", "source_checksum" => clothing_item.image_checksum }
+      )
+    )
+    GenerateClothingItemPolishedImageJob.perform_later(clothing_item.id, clothing_item.image_checksum)
+  end
+
+  def polish_in_progress_for_current_source?(clothing_item)
+    metadata = clothing_item.ai_metadata.fetch("image_polish", {})
+    metadata["status"].in?(%w[queued processing]) && metadata["source_checksum"] == clothing_item.image_checksum
+  end
 
   def mark_analysis_failed(clothing_item, error)
     Rails.logger.error("Clothing analysis failed for item #{clothing_item&.id}: #{error.class}: #{error.message}")

@@ -32,6 +32,10 @@ module Api
       end
 
       def destroy_full_body_image
+        current_user.outfit_visualizations
+                    .where(mode: :try_on)
+                    .where("metadata ->> 'reference_source' = ?", "profile")
+                    .destroy_all
         current_user.full_body_image.purge if current_user.full_body_image.attached?
         current_user.update!(full_body_image_consent_at: nil)
         success_response(data: { message: I18n.t("profile.full_body_image_deleted") })

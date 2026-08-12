@@ -21,7 +21,7 @@ module Stylist
           candidates: serialize_candidates(candidates),
           user_id: user.id
         )
-        ranked = build_ranked_combinations(candidates, provider_result)
+        ranked = build_ranked_combinations(candidates, provider_result, context)
         Ai::UsageTracker.succeed!(ai_request, provider_result.fetch(:metadata, {}))
         ranked
       rescue Ai::UsageLimitExceededError
@@ -60,7 +60,7 @@ module Stylist
         end
       end
 
-      def build_ranked_combinations(candidates, provider_result)
+      def build_ranked_combinations(candidates, provider_result, context)
         rankings = provider_result.fetch(:rankings)
         metadata = provider_result.fetch(:metadata, {})
         raise InvalidRankingError unless rankings.is_a?(Array)
@@ -71,43 +71,54 @@ module Stylist
           next if candidate_id.blank? || candidate_id > candidates.length || candidate_id < 1 || seen_ids.include?(candidate_id)
 
           explanation = Ai::Guardrails.model_text!(ranking["explanation"], max_length: 300)
+          name = Ai::Guardrails.model_text!(ranking["name"], max_length: 60)
 
           seen_ids << candidate_id
-          ranked_combination(candidates[candidate_id - 1], explanation, metadata)
+          ranked_combination(candidates[candidate_id - 1], name, explanation, metadata)
         end.first(RECOMMENDATION_LIMIT)
 
         raise InvalidRankingError if ranked.empty?
 
-        fill_with_deterministic_candidates(ranked, candidates, seen_ids, metadata)
+        fill_with_deterministic_candidates(ranked, candidates, seen_ids, metadata, context)
       rescue KeyError, TypeError
         raise InvalidRankingError
       end
 
-      def fill_with_deterministic_candidates(ranked, candidates, seen_ids, metadata)
+      def fill_with_deterministic_candidates(ranked, candidates, seen_ids, metadata, context)
         candidates.each_with_index do |candidate, index|
           break if ranked.length == RECOMMENDATION_LIMIT
           next if seen_ids.include?(index + 1)
 
-          ranked << ranked_combination(candidate, fallback_explanation(nil), metadata)
+          ranked << deterministic_combination(candidate, context, metadata)
         end
         ranked
       end
 
       def deterministic_ranking(candidates, context, reason: nil)
         Array(candidates).first(RECOMMENDATION_LIMIT).map do |candidate|
-          ranked_combination(
+          deterministic_combination(
             candidate,
-            fallback_explanation(context["occasion"]),
+            context,
             { "provider" => "deterministic", "fallback_reason" => reason }.compact
           )
         end
       end
 
-      def ranked_combination(candidate, explanation, metadata)
+      def deterministic_combination(candidate, context, metadata)
+        ranked_combination(
+          candidate,
+          OutfitName.call(items: candidate.items, occasion: context["occasion"]),
+          fallback_explanation(context["occasion"]),
+          metadata
+        )
+      end
+
+      def ranked_combination(candidate, name, explanation, metadata)
         RankedCombination.new(
           items: candidate.items,
           score: candidate.score,
           score_breakdown: candidate.score_breakdown,
+          name: name,
           explanation: explanation,
           ranking_metadata: metadata
         )

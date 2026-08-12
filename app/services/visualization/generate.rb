@@ -24,7 +24,7 @@ module Visualization
           provider: metadata["provider"],
           model: metadata["model"],
           response_id: metadata["response_id"],
-          metadata: metadata.except("usage"),
+          metadata: visualization.metadata.merge(metadata.except("usage")),
           completed_at: Time.current
         )
         Ai::UsageTracker.succeed!(ai_request, metadata)
