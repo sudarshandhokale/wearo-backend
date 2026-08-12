@@ -214,6 +214,11 @@ Use `example.env` as the deployment configuration reference. Production boot
 fails when database, Redis, host, HTTPS frontend, CORS, policy URLs, OpenAI,
 private S3, SMTP, or JWT settings are missing.
 
+For the single-instance AWS preview deployment, see
+[`docs/AWS_EC2_DEPLOYMENT.md`](docs/AWS_EC2_DEPLOYMENT.md). It runs Rails,
+Sidekiq, PostgreSQL, Redis, and Caddy on one EC2 host while deploying the Expo
+web frontend independently through AWS Amplify Hosting.
+
 Run separate web and worker processes:
 
 ```sh

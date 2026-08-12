@@ -6,6 +6,13 @@
 
 # Ignore bundler config.
 /.bundle
+/vendor/bundle
+
+# Ignore files that are not needed in the production image.
+/coverage
+/docs
+/spec
+/.idea
 
 # Ignore all environment files.
 /.env*
