@@ -7,6 +7,7 @@ en:
   clothing_items:
     create_failed: "Clothing item creation failed"
     deleted: "Clothing item deleted"
+    duplicate_image: "This clothing item image is already in your wardrobe"
     image_required: "A clothing item image is required"
     update_failed: "Clothing item update failed"
   errors:

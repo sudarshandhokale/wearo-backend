@@ -68,6 +68,53 @@ RSpec.describe "API v1 clothing items", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body.dig("error", "details")).to include("category")
     end
+
+    it "rejects an exact duplicate image for the same user's active wardrobe" do
+      post "/api/v1/clothing_items", params: {
+        clothing_item: { image: uploaded_png("first.png"), name: "First item" }
+      }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:created)
+
+      expect do
+        post "/api/v1/clothing_items", params: {
+          clothing_item: { image: uploaded_png("different-name.png"), name: "Duplicate item" }
+        }, headers: auth_headers(user)
+      end.not_to change(user.clothing_items, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("clothing_items.duplicate_image"))
+    end
+
+    it "allows the same image for different users" do
+      other_user = create(:user)
+      post "/api/v1/clothing_items", params: {
+        clothing_item: { image: uploaded_png("first.png") }
+      }, headers: auth_headers(user)
+
+      expect do
+        post "/api/v1/clothing_items", params: {
+          clothing_item: { image: uploaded_png("second.png") }
+        }, headers: auth_headers(other_user)
+      end.to change(other_user.clothing_items, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+    end
+
+    it "allows re-upload after the original item is discarded" do
+      post "/api/v1/clothing_items", params: {
+        clothing_item: { image: uploaded_png("first.png") }
+      }, headers: auth_headers(user)
+      user.clothing_items.last.discard!
+
+      expect do
+        post "/api/v1/clothing_items", params: {
+          clothing_item: { image: uploaded_png("replacement.png") }
+        }, headers: auth_headers(user)
+      end.to change(user.clothing_items, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+    end
   end
 
   describe "GET /api/v1/clothing_items/:id" do
@@ -120,6 +167,35 @@ RSpec.describe "API v1 clothing items", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(item.reload).to be_processing
+    end
+
+    it "rejects replacement with another active item's image" do
+      existing_item = create(:clothing_item, user: user, wardrobe: user.wardrobe)
+      existing_item.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "existing.png", content_type: "image/png")
+      item = create(:clothing_item, user: user, wardrobe: user.wardrobe)
+
+      expect do
+        patch "/api/v1/clothing_items/#{item.id}", params: {
+          clothing_item: { image: uploaded_png("duplicate.png") }
+        }, headers: auth_headers(user)
+      end.not_to have_enqueued_job(AnalyzeClothingItemJob)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("clothing_items.duplicate_image"))
+      expect(item.reload.image).not_to be_attached
+    end
+
+    it "allows replacing an item with its own image bytes" do
+      item = create(:clothing_item, user: user, wardrobe: user.wardrobe)
+      item.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "existing.png", content_type: "image/png")
+
+      expect do
+        patch "/api/v1/clothing_items/#{item.id}", params: {
+          clothing_item: { image: uploaded_png("same-item.png") }
+        }, headers: auth_headers(user)
+      end.to have_enqueued_job(AnalyzeClothingItemJob).with(item.id)
+
+      expect(response).to have_http_status(:ok)
     end
   end
 

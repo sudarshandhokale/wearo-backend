@@ -95,7 +95,8 @@ POST   /api/v1/clothing_items/:id/reanalyze
 ```
 
 Clothing item images are attached through Active Storage. Image responses return
-a signed blob id and a Rails storage proxy path.
+a signed blob id and a Rails storage proxy path. Exact duplicate image files are
+rejected within a user's active wardrobe; discarded items do not block re-upload.
 
 Image uploads and `reanalyze` requests enqueue `AnalyzeClothingItemJob`. The job
 uses the OpenAI Responses API with strict structured output, normalizes the result,

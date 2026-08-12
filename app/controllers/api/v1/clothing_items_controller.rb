@@ -22,8 +22,10 @@ module Api
           schedule_analysis(item) if item.image.attached?
           success_response(data: item, serializer: ClothingItem::ViewSerializer, status: :created)
         else
-          error_response(error: { message: I18n.t("clothing_items.create_failed"), details: item.errors.to_hash }, status: :unprocessable_entity)
+          clothing_item_error_response(item, fallback_key: "clothing_items.create_failed")
         end
+      rescue ActiveRecord::RecordNotUnique
+        duplicate_image_response
       end
 
       def update
@@ -38,8 +40,10 @@ module Api
           schedule_analysis(@clothing_item) if image.present?
           success_response(data: @clothing_item, serializer: ClothingItem::ViewSerializer)
         else
-          error_response(error: { message: I18n.t("clothing_items.update_failed"), details: @clothing_item.errors.to_hash }, status: :unprocessable_entity)
+          clothing_item_error_response(@clothing_item, fallback_key: "clothing_items.update_failed")
         end
+      rescue ActiveRecord::RecordNotUnique
+        duplicate_image_response
       end
 
       def destroy
@@ -94,6 +98,18 @@ module Api
 
       def schedule_analysis(clothing_item)
         AnalyzeClothingItemJob.perform_later(clothing_item.id)
+      end
+
+      def clothing_item_error_response(clothing_item, fallback_key:)
+        message_key = clothing_item.errors.added?(:image, :taken) ? "clothing_items.duplicate_image" : fallback_key
+        error_response(
+          error: { message: I18n.t(message_key), details: clothing_item.errors.to_hash },
+          status: :unprocessable_entity
+        )
+      end
+
+      def duplicate_image_response
+        error_response(error: { message: I18n.t("clothing_items.duplicate_image") }, status: :unprocessable_entity)
       end
     end
   end

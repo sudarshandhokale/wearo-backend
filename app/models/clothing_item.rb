@@ -19,6 +19,9 @@ class ClothingItem < ApplicationRecord
   validates :formality_score, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 10 }, allow_nil: true
   validates :image, content_type: %w[image/png image/jpeg image/webp], size: { less_than_or_equal_to: 10.megabytes }
   validate :wardrobe_belongs_to_user
+  validate :image_is_unique_for_user
+
+  before_validation :set_image_checksum
 
   scope :active, -> { where(discarded_at: nil) }
   scope :recent_first, -> { order(created_at: :desc) }
@@ -40,6 +43,20 @@ class ClothingItem < ApplicationRecord
   end
 
   private
+
+  def set_image_checksum
+    self.image_checksum = image.attached? ? image.blob.checksum : nil
+  end
+
+  def image_is_unique_for_user
+    return if discarded? || user_id.blank? || image_checksum.blank?
+
+    duplicate_exists = self.class.active
+      .where(user_id: user_id, image_checksum: image_checksum)
+      .where.not(id: id)
+      .exists?
+    errors.add(:image, :taken) if duplicate_exists
+  end
 
   def wardrobe_belongs_to_user
     return if wardrobe.blank? || user.blank? || wardrobe.user_id == user_id

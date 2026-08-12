@@ -21,4 +21,15 @@ RSpec.describe ClothingItem, type: :model do
 
     expect { item.discard! }.to change { item.reload.discarded? }.from(false).to(true)
   end
+
+  it "rejects an image checksum already used in the user's active wardrobe" do
+    user = create(:user)
+    existing_item = create(:clothing_item, user: user, wardrobe: user.wardrobe)
+    existing_item.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "existing.png", content_type: "image/png")
+    duplicate = build(:clothing_item, user: user, wardrobe: user.wardrobe)
+    duplicate.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "duplicate.png", content_type: "image/png")
+
+    expect(duplicate).not_to be_valid
+    expect(duplicate.errors.added?(:image, :taken)).to be(true)
+  end
 end
