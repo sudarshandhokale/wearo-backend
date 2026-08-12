@@ -4,6 +4,9 @@ class Outfit < ApplicationRecord
 
   has_many :outfit_items, -> { order(:position) }, dependent: :destroy, inverse_of: :outfit
   has_many :clothing_items, through: :outfit_items
+  has_many :wear_histories, dependent: :destroy
+  has_one :outfit_feedback, dependent: :destroy
+  has_many :outfit_visualizations, dependent: :destroy
 
   enum :status, {
     recommended: "recommended",

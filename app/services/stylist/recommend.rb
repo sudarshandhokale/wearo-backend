@@ -3,23 +3,26 @@ module Stylist
     DEFAULT_DAILY_RECOMMENDATION_LIMIT = 50
 
     class << self
-      def call(user:, prompt:)
+      def call(user:, prompt:, city: nil)
         prompt = Ai::Guardrails.user_prompt!(prompt.to_s)
         recommendation_request = create_recommendation_request!(user, prompt)
         extracted_context = ExtractContext.call(prompt, timezone: user.timezone)
-        candidates = CandidateSelector.call(user: user, context: extracted_context.attributes)
-        suggestions = WardrobeSuggestions.call(candidates: candidates, context: extracted_context.attributes)
-        combinations = CombinationBuilder.call(candidates: candidates, context: extracted_context.attributes)
+        external_context = fetch_external_context(user, extracted_context, city)
+        recommendation_context = enriched_context(extracted_context.attributes, external_context)
+        personalization = Personalization::Snapshot.call(user: user, as_of: extracted_context.recommended_for&.to_date || Time.current.to_date)
+        candidates = CandidateSelector.call(user: user, context: recommendation_context)
+        combinations = CombinationBuilder.call(candidates: candidates, context: recommendation_context)
         scored_combinations = combinations.map do |combination|
           CompatibilityScorer.call(
             combination: combination,
-            context: extracted_context.attributes,
-            style_profile: user.style_profile
+            context: recommendation_context,
+            style_profile: user.style_profile,
+            personalization: personalization
           )
         end
         ranked_combinations = RankRecommendations.call(
           scored_combinations: scored_combinations,
-          context: extracted_context.attributes,
+          context: recommendation_context,
           user: user,
           recommendation_request: recommendation_request
         )
@@ -29,18 +32,27 @@ module Stylist
           recommendation_request: recommendation_request,
           prompt: prompt,
           extracted_context: extracted_context,
+          context: recommendation_context,
+          weather: external_context.weather,
           ranked_combinations: ranked_combinations
+        )
+        suggestions = WardrobeSuggestions.call(
+          candidates: candidates,
+          context: recommendation_context,
+          user: user,
+          selected_item_ids: outfits.first&.clothing_item_ids || []
         )
         complete_recommendation_request!(
           recommendation_request,
           extracted_context: extracted_context,
+          context: recommendation_context,
           suggestions: suggestions,
           ranked_combinations: ranked_combinations
         )
 
         RecommendationResult.new(
           recommendation_request: recommendation_request,
-          context: extracted_context.attributes,
+          context: recommendation_context,
           outfits: outfits,
           suggestions: suggestions
         )
@@ -72,14 +84,15 @@ module Stylist
         end
       end
 
-      def persist_outfits(user:, recommendation_request:, prompt:, extracted_context:, ranked_combinations:)
+      def persist_outfits(user:, recommendation_request:, prompt:, extracted_context:, context:, weather:, ranked_combinations:)
         Outfit.transaction do
           ranked_combinations.map do |ranked_combination|
             outfit = user.outfits.create!(
               recommendation_request: recommendation_request,
               prompt: prompt,
               occasion: extracted_context.attributes["occasion"],
-              context: extracted_context.attributes,
+              context: context,
+              weather_context: Array(weather).find { |day| day["date"] == extracted_context.recommended_for&.to_date&.iso8601 } || Array(weather).first || {},
               recommendation_score: ranked_combination.score,
               score_breakdown: ranked_combination.score_breakdown,
               explanation: ranked_combination.explanation,
@@ -99,13 +112,13 @@ module Stylist
         end
       end
 
-      def complete_recommendation_request!(recommendation_request, extracted_context:, suggestions:, ranked_combinations:)
+      def complete_recommendation_request!(recommendation_request, extracted_context:, context:, suggestions:, ranked_combinations:)
         ranking_metadata = ranked_combinations.first&.ranking_metadata.to_h.stringify_keys
         ai_request = recommendation_request.ai_requests.order(created_at: :desc).first
 
         recommendation_request.update!(
           status: :completed,
-          context: extracted_context.attributes,
+          context: context,
           wardrobe_suggestions: suggestions,
           ranking_source: ranking_metadata["provider"] == "deterministic" ? "deterministic" : "ai",
           provider: ai_request&.provider,
@@ -130,6 +143,26 @@ module Stylist
           completed_at: Time.current,
           updated_at: Time.current
         )
+      end
+
+      def fetch_external_context(user, extracted_context, city)
+        return ExternalContext::Result.new(city: nil, country_code: user.country_code, weather: []) if city.blank?
+
+        date = extracted_context.recommended_for&.to_date || Time.current.in_time_zone(user.timezone).to_date
+        ExternalContext::Fetch.call(
+          user: user,
+          city: city,
+          start_date: date,
+          end_date: date
+        )
+      end
+
+      def enriched_context(context, external_context)
+        weather = external_context.weather.first
+        context.merge(
+          "city" => external_context.city,
+          "weather" => weather
+        ).compact
       end
     end
   end

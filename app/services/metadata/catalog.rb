@@ -77,6 +77,7 @@ module Metadata
         dinner: "Dinner",
         date_night: "Date Night",
         party: "Party",
+        concert: "Concert",
         wedding: "Wedding",
         festival: "Festival",
         religious_ceremony: "Religious Ceremony",
@@ -102,6 +103,7 @@ module Metadata
         style_profile: serialize_options(STYLE_OPTIONS),
         clothing_items: {
           categories: ClothingTaxonomy.categories_for_metadata,
+          fits: ClothingTaxonomy.fits_for_metadata,
           statuses: ClothingTaxonomy.statuses_for_metadata
         },
         outfits: {

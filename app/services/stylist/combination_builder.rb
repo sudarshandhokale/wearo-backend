@@ -34,7 +34,10 @@ module Stylist
       end
 
       def outerwear_relevant?(context)
-        context["season"].in?(%w[fall winter]) || context["formality"] == "formal"
+        weather = context["weather"].to_h
+        cold = weather["apparent_temperature_min_c"].present? && weather["apparent_temperature_min_c"].to_f < 10
+        wet = weather["precipitation_probability"].present? && weather["precipitation_probability"].to_i >= 50
+        context["season"].in?(%w[fall winter]) || context["formality"] == "formal" || cold || wet
       end
     end
   end

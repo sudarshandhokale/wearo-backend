@@ -24,4 +24,19 @@ RSpec.describe Stylist::CompatibilityScorer do
     expect(preferred.score).to be > disliked.score
     expect(preferred.score_breakdown.keys).to contain_exactly("color", "occasion", "weather", "preference", "style", "repeat")
   end
+
+  it "penalizes combinations containing recently worn items" do
+    combination = combination_with("white")
+    recent = combination.items.values.index_with { Time.current.to_date.iso8601 }
+    personalized = described_class.call(
+      combination: combination,
+      context: context,
+      style_profile: style_profile,
+      personalization: { "last_worn_by_item_id" => recent.transform_keys { |item| item.id.to_s } }
+    )
+    fresh = described_class.call(combination: combination, context: context, style_profile: style_profile)
+
+    expect(personalized.score_breakdown.fetch("repeat")).to eq(20.0)
+    expect(personalized.score).to be < fresh.score
+  end
 end

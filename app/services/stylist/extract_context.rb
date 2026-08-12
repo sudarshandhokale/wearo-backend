@@ -5,6 +5,7 @@ module Stylist
       "dinner" => /\b(dinner|restaurant|supper)\b/i,
       "date_night" => /\b(date|romantic)\b/i,
       "party" => /\b(party|club|celebration|birthday)\b/i,
+      "concert" => /\b(concert|live music|music gig|music festival|band performance)\b/i,
       "wedding" => /\b(wedding|reception|sangeet|mehndi|haldi)\b/i,
       "festival" => /\b(festival|diwali|holi|navratri|eid|onam|pongal|baisakhi|durga puja)\b/i,
       "religious_ceremony" => /\b(puja|pooja|temple|religious ceremony)\b/i,
@@ -21,6 +22,7 @@ module Stylist
     ACTIVITY_RULES = {
       "professional" => /\b(work|office|business|meeting|interview)\b/i,
       "social" => /\b(dinner|date|friends|party|restaurant|celebration)\b/i,
+      "music_event" => /\b(concert|live music|music gig|music festival|band performance)\b/i,
       "active" => /\b(workout|gym|run|running|hike|hiking|exercise)\b/i,
       "outdoor" => /\b(picnic|outdoor|park|camping)\b/i,
       "travel" => /\b(travel|flight|airport|road trip)\b/i

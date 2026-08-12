@@ -72,6 +72,39 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       )
     end
 
+    it "returns actionable rain advice when protection is not cataloged" do
+      create(
+        :clothing_item,
+        user: user,
+        wardrobe: user.wardrobe,
+        category: "one_piece",
+        subcategory: "dress",
+        status: "ready"
+      )
+      allow(ExternalContext::Fetch).to receive(:call).and_return(
+        ExternalContext::Result.new(
+          city: "Berlin",
+          country_code: "DE",
+          weather: [ { "date" => Date.current.iso8601, "condition" => "rain", "precipitation_probability" => 85 } ]
+        )
+      )
+
+      post "/api/v1/stylist/recommendations", params: {
+        prompt: "Casual plans today",
+        city: "Berlin"
+      }, headers: auth_headers(user)
+
+      suggestion = response.parsed_body.dig("data", "suggestions").find { |item| item["key"] == "bring_rain_protection" }
+      expect(response).to have_http_status(:created)
+      expect(suggestion).to include(
+        "type" => "weather",
+        "priority" => "essential",
+        "action" => "bring",
+        "suggested_subcategories" => %w[umbrella raincoat water_resistant_shoes]
+      )
+      expect(suggestion.fetch("question")).to be_present
+    end
+
 
     it "recommends a complete set without requiring separates" do
       matching_set = create(

@@ -13,10 +13,22 @@ module Api
         end
       end
 
+      def destroy_full_body_image
+        current_user.full_body_image.purge if current_user.full_body_image.attached?
+        success_response(data: { message: I18n.t("profile.full_body_image_deleted") })
+      end
+
       private
 
       def me_params
-        params.require(:user).permit(:first_name, :last_name, :timezone, :country_code, :preferred_city)
+        params.require(:user).permit(
+          :first_name,
+          :last_name,
+          :timezone,
+          :country_code,
+          :preferred_city,
+          :full_body_image
+        )
       end
     end
   end

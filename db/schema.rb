@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_12_140100) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_12_170300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -90,8 +90,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_140100) do
     t.string "image_checksum"
     t.string "garment_type"
     t.jsonb "cultural_tags", default: [], null: false
+    t.string "fit"
     t.index ["discarded_at"], name: "index_clothing_items_on_discarded_at"
     t.index ["user_id", "category"], name: "index_clothing_items_on_user_id_and_category"
+    t.index ["user_id", "fit"], name: "index_clothing_items_on_user_id_and_fit"
     t.index ["user_id", "garment_type"], name: "index_clothing_items_on_user_id_and_garment_type"
     t.index ["user_id", "image_checksum"], name: "index_active_clothing_items_on_user_and_image_checksum", unique: true, where: "((discarded_at IS NULL) AND (image_checksum IS NOT NULL))"
     t.index ["user_id", "primary_color"], name: "index_clothing_items_on_user_id_and_primary_color"
@@ -109,6 +111,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_140100) do
     t.index ["jti"], name: "index_jwt_denylist_on_jti", unique: true
   end
 
+  create_table "outfit_feedbacks", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "outfit_id", null: false
+    t.string "reaction", null: false
+    t.string "reason"
+    t.string "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["outfit_id"], name: "index_outfit_feedbacks_on_outfit_id"
+    t.index ["user_id", "outfit_id"], name: "index_outfit_feedbacks_on_user_id_and_outfit_id", unique: true
+    t.index ["user_id"], name: "index_outfit_feedbacks_on_user_id"
+  end
+
   create_table "outfit_items", force: :cascade do |t|
     t.bigint "outfit_id", null: false
     t.bigint "clothing_item_id", null: false
@@ -120,6 +135,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_140100) do
     t.index ["outfit_id", "clothing_item_id"], name: "index_outfit_items_on_outfit_id_and_clothing_item_id", unique: true
     t.index ["outfit_id", "position"], name: "index_outfit_items_on_outfit_id_and_position", unique: true
     t.index ["outfit_id"], name: "index_outfit_items_on_outfit_id"
+  end
+
+  create_table "outfit_visualizations", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "outfit_id", null: false
+    t.string "mode", default: "flat_lay", null: false
+    t.string "status", default: "queued", null: false
+    t.string "provider"
+    t.string "model"
+    t.string "response_id"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "failure_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["outfit_id", "status"], name: "index_outfit_visualizations_on_outfit_id_and_status"
+    t.index ["outfit_id"], name: "index_outfit_visualizations_on_outfit_id"
+    t.index ["user_id", "created_at"], name: "index_outfit_visualizations_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_outfit_visualizations_on_user_id"
   end
 
   create_table "outfits", force: :cascade do |t|
@@ -183,6 +217,41 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_140100) do
     t.index ["user_id"], name: "index_style_profiles_on_user_id", unique: true
   end
 
+  create_table "styling_plan_entries", force: :cascade do |t|
+    t.bigint "styling_plan_id", null: false
+    t.bigint "outfit_id", null: false
+    t.date "planned_for", null: false
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "weather_context", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "events_context", default: [], null: false
+    t.index ["outfit_id"], name: "index_styling_plan_entries_on_outfit_id"
+    t.index ["styling_plan_id", "planned_for"], name: "index_styling_plan_entries_on_styling_plan_id_and_planned_for", unique: true
+    t.index ["styling_plan_id"], name: "index_styling_plan_entries_on_styling_plan_id"
+  end
+
+  create_table "styling_plans", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "plan_type", null: false
+    t.string "status", default: "processing", null: false
+    t.string "city"
+    t.string "country_code"
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.text "prompt"
+    t.jsonb "weather_context", default: [], null: false
+    t.jsonb "packing_summary", default: {}, null: false
+    t.string "failure_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "events_context", default: [], null: false
+    t.index ["user_id", "start_date"], name: "index_styling_plans_on_user_id_and_start_date"
+    t.index ["user_id", "status"], name: "index_styling_plans_on_user_id_and_status"
+    t.index ["user_id"], name: "index_styling_plans_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "first_name", null: false
     t.string "last_name"
@@ -209,16 +278,39 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_140100) do
     t.index ["user_id"], name: "index_wardrobes_on_user_id", unique: true
   end
 
+  create_table "wear_histories", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "outfit_id", null: false
+    t.date "worn_on", null: false
+    t.string "occasion"
+    t.jsonb "context", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["outfit_id"], name: "index_wear_histories_on_outfit_id"
+    t.index ["user_id", "outfit_id", "worn_on"], name: "index_wear_histories_on_user_id_and_outfit_id_and_worn_on", unique: true
+    t.index ["user_id", "worn_on"], name: "index_wear_histories_on_user_id_and_worn_on"
+    t.index ["user_id"], name: "index_wear_histories_on_user_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_requests", "users"
   add_foreign_key "clothing_items", "users"
   add_foreign_key "clothing_items", "wardrobes"
+  add_foreign_key "outfit_feedbacks", "outfits"
+  add_foreign_key "outfit_feedbacks", "users"
   add_foreign_key "outfit_items", "clothing_items"
   add_foreign_key "outfit_items", "outfits"
+  add_foreign_key "outfit_visualizations", "outfits"
+  add_foreign_key "outfit_visualizations", "users"
   add_foreign_key "outfits", "recommendation_requests"
   add_foreign_key "outfits", "users"
   add_foreign_key "recommendation_requests", "users"
   add_foreign_key "style_profiles", "users"
+  add_foreign_key "styling_plan_entries", "outfits"
+  add_foreign_key "styling_plan_entries", "styling_plans"
+  add_foreign_key "styling_plans", "users"
   add_foreign_key "wardrobes", "users"
+  add_foreign_key "wear_histories", "outfits"
+  add_foreign_key "wear_histories", "users"
 end

@@ -16,12 +16,25 @@ en:
       internal_server_error: "Something went wrong"
       not_found: "The requested resource was not found"
       unauthorized: "Unauthorized"
+  external_context:
+    invalid_date_range: "Choose a valid date range of up to 16 days"
   outfits:
+    feedback_failed: "Outfit feedback could not be saved"
     update_failed: "Outfit feedback could not be updated"
+    wear_failed: "The outfit could not be added to your wear history"
   profile:
+    full_body_image_deleted: "Full-body profile image deleted"
     update_failed: "Profile update failed"
   style_profile:
     update_failed: "Style profile update failed"
+  styling_plans:
+    compact_packing_strategy: "Reuse versatile pieces across days and pack only distinct essentials"
+    create_failed: "The styling plan could not be created"
+    daily_explanation: "Selected for your plans and expected conditions on %{date}"
+    default_prompt:
+      vacation: "Comfortable versatile travel outfit"
+      week: "Everyday outfit for the week"
+    invalid_date_range: "Choose a valid planning range of up to 16 days"
   stylist:
     fallback_explanation: "This outfit is a strong match for %{occasion} based on your wardrobe and style preferences."
     general_occasion: "your plans"
@@ -29,6 +42,30 @@ en:
     invalid_prompt: "Describe where you are going or what you are dressing for"
     recommendation_limit_reached: "You have reached today's recommendation limit"
     suggestions:
-      add_accessory: "Add accessories to receive more varied outfit suggestions"
-      add_outerwear: "Add outerwear to complete more cool-weather and formal outfits"
-      add_shoes: "Add shoes to receive more complete outfit suggestions"
+      add_accessory:
+        message: "A finishing accessory could make this outfit more complete"
+        question: "Would you like to add an accessory to your wardrobe?"
+      add_outerwear:
+        message: "An outer layer would make this outfit more suitable for the expected conditions"
+        question: "Would you like suggestions for a versatile outer layer?"
+      add_shoes:
+        message: "Adding shoes to your wardrobe would provide more complete outfit options"
+        question: "Would you like suggestions for versatile shoes?"
+      bring_rain_protection:
+        message: "Rain is expected, so bring an umbrella, raincoat, or water-resistant footwear"
+        question: "Would you like to add rain protection to this plan?"
+      expand_core_wardrobe:
+        message: "Your wardrobe has %{count} ready core items, so a few versatile additions would create more outfit variety"
+        question: "Would you like suggestions for the most useful wardrobe additions?"
+      try_another_finishing_touch:
+        message: "A different finishing accessory could give this outfit another look"
+        question: "Would you like to explore another accessory option?"
+      use_owned_finishing_touch:
+        message: "Your %{item_name} could add a useful finishing touch to this outfit"
+        question: "Would you like to include your %{item_name}?"
+      use_owned_rain:
+        message: "Rain is expected, and your %{item_name} can provide useful protection"
+        question: "Would you like to include your %{item_name}?"
+  visualizations:
+    create_failed: "The outfit visualization could not be requested"
+    daily_limit_reached: "You have reached today's outfit visualization limit"

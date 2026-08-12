@@ -7,8 +7,16 @@ class User < ApplicationRecord
   has_many :clothing_items, dependent: :destroy
   has_many :recommendation_requests, dependent: :destroy
   has_many :ai_requests, dependent: :destroy
+  has_many :wear_histories, dependent: :destroy
+  has_many :outfit_feedbacks, dependent: :destroy
+  has_many :styling_plans, dependent: :destroy
+  has_many :outfit_visualizations, dependent: :destroy
+  has_one_attached :full_body_image
 
   validates :first_name, :timezone, :country_code, presence: true
+  validates :full_body_image,
+            content_type: %w[image/png image/jpeg image/webp],
+            size: { less_than_or_equal_to: 10.megabytes }
 
   before_validation :normalize_email
   before_validation :normalize_country_code

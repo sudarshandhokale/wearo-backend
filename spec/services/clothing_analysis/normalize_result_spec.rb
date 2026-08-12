@@ -10,6 +10,7 @@ RSpec.describe ClothingAnalysis::NormalizeResult do
       secondary_colors: [ "Grey", "grey" ],
       pattern: "Color Block",
       material: "Organic Cotton",
+      fit: "Regular",
       season_tags: [ "Spring / Summer" ],
       occasion_tags: [ "Everyday Casual" ],
       style_tags: [ "Street Wear" ],
@@ -25,6 +26,7 @@ RSpec.describe ClothingAnalysis::NormalizeResult do
       "secondary_colors" => [ "gray" ],
       "pattern" => "color_block",
       "material" => "organic_cotton",
+      "fit" => "regular",
       "formality_score" => 2,
       "confidence" => 0.91
     )

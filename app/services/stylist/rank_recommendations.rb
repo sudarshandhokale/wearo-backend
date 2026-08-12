@@ -52,6 +52,7 @@ module Stylist
                 occasion_tags: Ai::Guardrails.token_list!(item.occasion_tags),
                 style_tags: Ai::Guardrails.token_list!(item.style_tags),
                 cultural_tags: Ai::Guardrails.token_list!(item.cultural_tags),
+                fit: item.fit,
                 formality_score: item.formality_score
               }
             end

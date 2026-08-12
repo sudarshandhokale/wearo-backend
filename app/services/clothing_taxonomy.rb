@@ -144,6 +144,7 @@ class ClothingTaxonomy
         stole: "Stole",
         turban: "Turban",
         sunglasses: "Sunglasses",
+        umbrella: "Umbrella",
         jewelry: "Jewelry",
         bangles: "Bangles",
         bindi: "Bindi",
@@ -158,6 +159,15 @@ class ClothingTaxonomy
     ready: "Ready",
     analysis_failed: "Analysis Failed"
   }.freeze
+  FITS = {
+    fitted: "Fitted",
+    slim: "Slim",
+    regular: "Regular",
+    relaxed: "Relaxed",
+    oversized: "Oversized",
+    flowing: "Flowing",
+    structured: "Structured"
+  }.freeze
 
   class << self
     def category_keys
@@ -166,6 +176,14 @@ class ClothingTaxonomy
 
     def status_keys
       STATUSES.keys.map(&:to_s)
+    end
+
+    def fit_keys
+      FITS.keys.map(&:to_s)
+    end
+
+    def fits_for_metadata
+      FITS.map { |key, label| { key: key.to_s, label: label } }
     end
 
     def subcategory_keys(category = nil)

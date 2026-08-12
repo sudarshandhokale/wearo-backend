@@ -17,6 +17,7 @@ class ClothingItem < ApplicationRecord
   validates :wardrobe, presence: true
   validates :category, inclusion: { in: ClothingTaxonomy.category_keys }, allow_blank: true
   validates :subcategory, inclusion: { in: ->(item) { ClothingTaxonomy.subcategory_keys(item.category) } }, allow_blank: true
+  validates :fit, inclusion: { in: ClothingTaxonomy.fit_keys }, allow_blank: true
   validates :formality_score, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 10 }, allow_nil: true
   validates :image, content_type: %w[image/png image/jpeg image/webp], size: { less_than_or_equal_to: 10.megabytes }
   validate :wardrobe_belongs_to_user
@@ -68,6 +69,7 @@ class ClothingItem < ApplicationRecord
   def ai_metadata_passes_guardrails
     Ai::Guardrails.model_text!(name, max_length: 120, allow_nil: true)
     Ai::Guardrails.model_text!(garment_type, max_length: 80, allow_nil: true)
+    Ai::Guardrails.token!(fit, allow_nil: true)
     Ai::Guardrails.token_list!(secondary_colors, max_items: 8)
     Ai::Guardrails.token_list!(season_tags, max_items: 8)
     %i[occasion_tags style_tags cultural_tags].each do |attribute|

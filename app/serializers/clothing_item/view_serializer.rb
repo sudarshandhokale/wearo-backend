@@ -9,6 +9,7 @@ class ClothingItem::ViewSerializer < ApplicationSerializer
              :secondary_colors,
              :pattern,
              :material,
+             :fit,
              :season_tags,
              :occasion_tags,
              :style_tags,

@@ -2,7 +2,11 @@ module Api
   module V1
     class StylistController < BaseController
       def recommendations
-        result = Stylist::Recommend.call(user: current_user, prompt: params[:prompt])
+        result = Stylist::Recommend.call(
+          user: current_user,
+          prompt: params[:prompt],
+          city: params[:city]
+        )
         success_response(data: result, serializer: Stylist::RecommendationSerializer, status: :created)
       rescue Stylist::InvalidPromptError
         error_response(error: { message: I18n.t("stylist.invalid_prompt") }, status: :unprocessable_entity)

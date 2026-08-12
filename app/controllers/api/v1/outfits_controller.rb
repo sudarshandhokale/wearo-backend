@@ -1,7 +1,7 @@
 module Api
   module V1
     class OutfitsController < BaseController
-      before_action :set_outfit, only: %i[show update]
+      before_action :set_outfit, only: %i[show update wear feedback]
 
       def index
         outfits = current_user.outfits
@@ -33,6 +33,32 @@ module Api
         end
       end
 
+      def wear
+        history = Outfits::MarkWorn.call(
+          user: current_user,
+          outfit: @outfit,
+          worn_on: wear_params[:worn_on].presence || Time.current.in_time_zone(current_user.timezone).to_date,
+          occasion: wear_params[:occasion],
+          context: wear_params[:context] || {}
+        )
+        success_response(data: history, serializer: WearHistory::ViewSerializer, status: :created)
+      rescue ActiveRecord::RecordInvalid => error
+        error_response(
+          error: { message: I18n.t("outfits.wear_failed"), details: error.record.errors.to_hash },
+          status: :unprocessable_entity
+        )
+      end
+
+      def feedback
+        record = Outfits::RecordFeedback.call(user: current_user, outfit: @outfit, attributes: feedback_params)
+        success_response(data: record, serializer: OutfitFeedback::ViewSerializer)
+      rescue ActiveRecord::RecordInvalid => error
+        error_response(
+          error: { message: I18n.t("outfits.feedback_failed"), details: error.record.errors.to_hash },
+          status: :unprocessable_entity
+        )
+      end
+
       private
 
       def set_outfit
@@ -43,6 +69,14 @@ module Api
 
       def outfit_params
         params.require(:outfit).permit(:status, :rating, :feedback_note)
+      end
+
+      def wear_params
+        params.fetch(:wear, {}).permit(:worn_on, :occasion, context: {})
+      end
+
+      def feedback_params
+        params.require(:feedback).permit(:reaction, :reason, :notes)
       end
 
       def per_page

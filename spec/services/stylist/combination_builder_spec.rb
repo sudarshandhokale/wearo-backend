@@ -20,6 +20,28 @@ RSpec.describe Stylist::CombinationBuilder do
   end
 
 
+  it "adds available outerwear when rain is expected" do
+    raincoat = build_stubbed(:clothing_item, category: "outerwear", subcategory: "raincoat")
+    candidates = {
+      "top" => [],
+      "bottom" => [],
+      "one_piece" => [ build_stubbed(:clothing_item, category: "one_piece", subcategory: "dress") ],
+      "drape" => [],
+      "set" => [],
+      "shoes" => [],
+      "outerwear" => [ raincoat ],
+      "accessory" => []
+    }
+
+    result = described_class.call(
+      candidates: candidates,
+      context: { "weather" => { "precipitation_probability" => 80 } }
+    )
+
+    expect(result.first.items.fetch("outerwear")).to eq(raincoat)
+  end
+
+
   it "builds a one-piece outfit when separates and shoes are unavailable" do
     dress = build_stubbed(:clothing_item, category: "one_piece", subcategory: "dress")
     candidates = {

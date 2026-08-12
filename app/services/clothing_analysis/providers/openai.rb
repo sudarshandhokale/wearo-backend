@@ -106,6 +106,7 @@ module ClothingAnalysis
           Choose category and subcategory only from this taxonomy: #{ClothingTaxonomy::CATEGORIES.to_json}.
           Use one universal category from the supplied taxonomy. Preserve the garment's culturally specific local name in garment_type.
           If no listed subtype fits, use the category's other subtype instead of changing the universal category.
+          Choose fit only from: #{ClothingTaxonomy.fit_keys.to_json}.
           Use concise lowercase values for colors, pattern, material, seasons, occasions, style tags, and open cultural tags.
           Set uncertain nullable fields to null and provide confidence from 0 to 1.
         PROMPT

@@ -10,6 +10,7 @@ module ClothingAnalysis
       secondary_colors
       pattern
       material
+      fit
       season_tags
       occasion_tags
       style_tags
@@ -31,6 +32,7 @@ module ClothingAnalysis
         secondary_colors: { type: "array", maxItems: 8, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
         pattern: { type: [ "string", "null" ], maxLength: 50, pattern: TOKEN_PATTERN },
         material: { type: [ "string", "null" ], maxLength: 50, pattern: TOKEN_PATTERN },
+        fit: { type: [ "string", "null" ], enum: ClothingTaxonomy.fit_keys + [ nil ] },
         season_tags: { type: "array", maxItems: 8, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
         occasion_tags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
         style_tags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
@@ -68,7 +70,7 @@ module ClothingAnalysis
       def validate_guardrails!(result)
         Ai::Guardrails.model_text!(result["name"], max_length: 120, allow_nil: true)
         Ai::Guardrails.model_text!(result["garment_type"], max_length: 80, allow_nil: true)
-        %w[category subcategory primary_color pattern material].each do |field|
+        %w[category subcategory primary_color pattern material fit].each do |field|
           Ai::Guardrails.token!(result[field], allow_nil: true)
         end
         Ai::Guardrails.token_list!(result["secondary_colors"], max_items: 8)
@@ -83,8 +85,10 @@ module ClothingAnalysis
       def validate_taxonomy!(result)
         category = result["category"]
         subcategory = result["subcategory"]
+        fit = result["fit"]
 
         raise InvalidResultError, "Analysis result contains an invalid category" if category.present? && ClothingTaxonomy.category_keys.exclude?(category)
+        raise InvalidResultError, "Analysis result contains an invalid fit" if fit.present? && ClothingTaxonomy.fit_keys.exclude?(fit)
         return if subcategory.blank?
 
         valid_subcategories = ClothingTaxonomy.subcategory_keys(category)

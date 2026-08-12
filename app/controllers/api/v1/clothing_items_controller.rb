@@ -84,6 +84,7 @@ module Api
           :primary_color,
           :pattern,
           :material,
+          :fit,
           :formality_score,
           :image,
           secondary_colors: [],

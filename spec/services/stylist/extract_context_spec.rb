@@ -30,4 +30,19 @@ RSpec.describe Stylist::ExtractContext do
     expect(wedding.attributes).to include("occasion" => "wedding", "formality" => "formal")
     expect(festival.attributes).to include("occasion" => "festival")
   end
+
+
+  it "extracts a user-provided concert without external event discovery" do
+    result = described_class.call(
+      "Coldplay concert in Berlin on Saturday",
+      timezone: "Europe/Berlin"
+    )
+
+    expect(result.attributes).to include(
+      "occasion" => "concert",
+      "activity" => "music_event",
+      "formality" => "casual"
+    )
+    expect(result.recommended_for.wday).to eq(6)
+  end
 end

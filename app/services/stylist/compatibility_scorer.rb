@@ -22,15 +22,15 @@ module Stylist
     FORMALITY_TARGETS = CandidateSelector::FORMALITY_TARGETS
 
     class << self
-      def call(combination:, context:, style_profile:)
+      def call(combination:, context:, style_profile:, personalization: {})
         items = combination.items.values
         breakdown = {
           "color" => color_score(items),
           "occasion" => occasion_score(items, context),
           "weather" => weather_score(items, context),
-          "preference" => preference_score(items, style_profile),
-          "style" => style_score(items, style_profile),
-          "repeat" => 100.0
+          "preference" => preference_score(items, style_profile, personalization),
+          "style" => style_score(items, style_profile, personalization),
+          "repeat" => repeat_score(items, personalization)
         }
         score = breakdown.sum { |key, value| value * WEIGHTS.fetch(key) }.round(2)
 
@@ -77,36 +77,106 @@ module Stylist
 
       def weather_score(items, context)
         season = context["season"]
-        return 80.0 if season.blank?
+        weather = context["weather"].to_h
+        season_score = if season.blank?
+          80.0
+        else
+          average(items.map do |item|
+            if item.season_tags.intersect?([ season, "all_season" ])
+              100.0
+            elsif item.season_tags.empty?
+              75.0
+            else
+              40.0
+            end
+          end)
+        end
+
+        signals = [ season_score ]
+        minimum_temperature = weather["apparent_temperature_min_c"]
+        precipitation = weather["precipitation_probability"]
+        signals << cold_weather_score(items) if minimum_temperature.present? && minimum_temperature.to_f < 10
+        signals << wet_weather_score(items) if precipitation.present? && precipitation.to_i >= 50
+        average(signals)
+      end
+
+      def cold_weather_score(items)
+        items.any? { |item| item.category == "outerwear" || item.season_tags.intersect?(%w[fall winter]) } ? 100.0 : 45.0
+      end
+
+      def wet_weather_score(items)
+        weather_tokens = %w[rain raincoat waterproof water_resistant]
+        items.any? { |item| ([ item.garment_type, item.subcategory ] + item.style_tags).compact.intersect?(weather_tokens) } ? 100.0 : 55.0
+      end
+
+      def preference_score(items, style_profile, personalization)
+        return 75.0 if style_profile.blank?
+
+        colors = items.filter_map(&:primary_color)
+        learned = personalization.fetch("learned", {})
+        disliked = (style_profile.disliked_colors + Array(learned["disliked_colors"])).uniq
+        preferred = (style_profile.preferred_colors + Array(learned["preferred_colors"])).uniq
+        color_result = if colors.intersect?(disliked)
+          20.0
+        elsif preferred.empty?
+          75.0
+        else
+          matches = colors.count { |color| preferred.include?(color) }
+          70.0 + (30.0 * matches / [ colors.length, 1 ].max)
+        end
+
+        fit_results = items.filter_map { |item| fit_preference_score(item, style_profile.fit_preferences) }
+        fit_results.empty? ? color_result : average([ color_result, average(fit_results) ])
+      end
+
+      def fit_preference_score(item, preferences)
+        return if item.fit.blank?
+
+        preferred_fit = preferences[item.category] || preferences[plural_preference_key(item.category)]
+        return if preferred_fit.blank?
+
+        item.fit == preferred_fit ? 100.0 : 55.0
+      end
+
+      def plural_preference_key(category)
+        { "top" => "tops", "bottom" => "bottoms", "shoe" => "shoes" }.fetch(category, category)
+      end
+
+      def style_score(items, style_profile, personalization)
+        return 75.0 if style_profile.blank?
+
+        learned = personalization.fetch("learned", {})
+        preferred = (style_profile.preferred_styles + Array(learned["preferred_styles"])).uniq
+        disliked = Array(learned["disliked_styles"])
+        return 75.0 if preferred.empty? && disliked.empty?
 
         average(items.map do |item|
-          if item.season_tags.intersect?([ season, "all_season" ])
+          if item.style_tags.intersect?(disliked)
+            25.0
+          elsif item.style_tags.intersect?(preferred)
             100.0
-          elsif item.season_tags.empty?
-            75.0
           else
-            40.0
+            55.0
           end
         end)
       end
 
-      def preference_score(items, style_profile)
-        return 75.0 if style_profile.blank?
+      def repeat_score(items, personalization)
+        worn_dates = personalization.fetch("last_worn_by_item_id", {})
+        days = items.filter_map do |item|
+          date = Date.iso8601(worn_dates[item.id.to_s]) if worn_dates[item.id.to_s].present?
+          (Time.current.to_date - date).to_i if date
+        rescue Date::Error
+          nil
+        end
+        return 100.0 if days.empty?
 
-        colors = items.filter_map(&:primary_color)
-        return 20.0 if colors.intersect?(style_profile.disliked_colors)
-        return 75.0 if style_profile.preferred_colors.empty?
+        most_recent = days.min
+        return 20.0 if most_recent <= 2
+        return 45.0 if most_recent <= 7
+        return 70.0 if most_recent <= 14
 
-        matches = colors.count { |color| style_profile.preferred_colors.include?(color) }
-        70.0 + (30.0 * matches / [ colors.length, 1 ].max)
-      end
-
-      def style_score(items, style_profile)
-        return 75.0 if style_profile.blank? || style_profile.preferred_styles.empty?
-
-        average(items.map do |item|
-          item.style_tags.intersect?(style_profile.preferred_styles) ? 100.0 : 55.0
-        end)
+        100.0
       end
 
       def average(values)

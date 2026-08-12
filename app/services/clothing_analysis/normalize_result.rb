@@ -80,6 +80,7 @@ module ClothingAnalysis
           "secondary_colors" => normalize_list(source["secondary_colors"], method(:normalize_color)),
           "pattern" => normalize_token(source["pattern"]),
           "material" => normalize_token(source["material"]),
+          "fit" => normalize_token(source["fit"]),
           "season_tags" => normalize_list(source["season_tags"]),
           "occasion_tags" => normalize_list(source["occasion_tags"]),
           "style_tags" => normalize_list(source["style_tags"]),

@@ -22,6 +22,7 @@ RSpec.describe ClothingAnalysis::Providers::Openai do
       secondary_colors: [],
       pattern: "solid",
       material: "cotton",
+      fit: "regular",
       season_tags: [ "summer" ],
       occasion_tags: [ "casual" ],
       style_tags: [ "minimal" ],
