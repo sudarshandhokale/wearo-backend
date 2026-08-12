@@ -4,6 +4,9 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
   let(:user) { create(:user) }
 
   before do
+    allow(ExternalContext::Fetch).to receive(:call) do |user:, city:, **|
+      ExternalContext::Result.new(city: city.presence || user.preferred_city, country_code: user.country_code, weather: [])
+    end
     allow(Stylist::RankRecommendations).to receive(:call) do |scored_combinations:, **|
       scored_combinations.sort_by { |combination| -combination.score }.first(3).map do |combination|
         Stylist::RankedCombination.new(

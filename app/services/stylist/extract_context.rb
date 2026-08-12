@@ -39,6 +39,7 @@ module Stylist
       /\b(?:going|traveling|travelling|flying|heading)\s+to\s+(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i,
       /\b(?:trip|vacation|holiday)\s+(?:in|to)\s+(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i,
       /\b(?:destination|city|location)\s+(?:is|:)\s*(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i,
+      /\bpack(?:ing)?\s+for\s+(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i,
       /\b(?:in|near|around|visiting|visit)\s+(#{LOCATION_WORD}(?:\s+#{LOCATION_WORD}){0,3}?)#{LOCATION_END}/i
     ].freeze
     NON_LOCATION_WORDS = %w[

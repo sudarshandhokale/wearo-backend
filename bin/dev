@@ -1,2 +1,30 @@
 #!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+
+commands = [
+  [ "./bin/rails", "server", *ARGV ],
+  [ "bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml" ]
+]
+
+pids = commands.map { |command| Process.spawn(*command) }
+
+stop_processes = lambda do |signal = "TERM"|
+  pids.each do |pid|
+    Process.kill(signal, pid)
+  rescue Errno::ESRCH
+    nil
+  end
+end
+
+Signal.trap("INT") { stop_processes.call("INT") }
+Signal.trap("TERM") { stop_processes.call }
+
+finished_pid, status = Process.wait2
+stop_processes.call
+
+(pids - [ finished_pid ]).each do |pid|
+  Process.wait(pid)
+rescue Errno::ECHILD
+  nil
+end
+
+exit(status.exitstatus || 1)

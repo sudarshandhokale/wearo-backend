@@ -22,4 +22,20 @@ RSpec.describe ExternalContext::Fetch do
       described_class.call(user: create(:user), start_date: "2026-08-01", end_date: "2026-08-20")
     end.to raise_error(ExternalContext::InvalidDateRangeError)
   end
+
+  it "prefers an explicit destination over the profile city" do
+    user = create(:user, preferred_city: "Hamburg", country_code: "DE")
+    weather = instance_double(ExternalContext::Weather::OpenMeteo)
+    allow(weather).to receive(:call).and_return([])
+
+    result = described_class.call(user: user, city: "Paris", weather_provider: weather)
+
+    expect(result.city).to eq("Paris")
+    expect(weather).to have_received(:call).with(
+      city: "Paris",
+      country_code: "DE",
+      start_date: Date.current,
+      end_date: Date.current
+    )
+  end
 end

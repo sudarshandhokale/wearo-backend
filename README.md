@@ -21,11 +21,19 @@ part of this application.
 
 ## Local Setup
 
+Install PostgreSQL and Redis, then run:
+
 ```sh
 bundle install
-bin/rails db:create db:migrate
-bin/rails server
+bin/rails db:prepare
+bin/dev
 ```
+
+`bin/dev` starts both the Rails server and the Sidekiq worker. Keep it running so
+queued analysis, visualization, and mail jobs are processed. For isolated
+debugging, `ACTIVE_JOB_QUEUE_ADAPTER=inline bin/rails server` runs jobs inside
+the web process, but this blocks the request and does not exercise Sidekiq
+retries.
 
 Run the test suite:
 
@@ -142,8 +150,8 @@ OPENAI_CLOTHING_IMAGE_MODEL=gpt-image-2
 CLOTHING_IMAGE_AUTO_POLISH_ENABLED=true
 ```
 
-Development uses the in-process Active Job async adapter. Production sends the
-`clothing_analysis` queue to Sidekiq.
+Development and production send background work to Sidekiq. Run `bin/dev`
+locally so the Rails server and worker are both available.
 
 Outfits:
 
@@ -169,7 +177,7 @@ GET  /api/v1/ai/usage
 
 ```json
 {
-  "prompt": "I have a casual dinner with friends tonight"
+  "prompt": "I have a casual dinner in Paris tomorrow"
 }
 ```
 
@@ -178,6 +186,32 @@ wardrobe, builds bounded combinations, applies weighted compatibility scoring,
 and sends at most 30 compact candidates to the configured OpenAI model for final
 ranking. Up to three outfits are persisted and returned. When the provider is not
 configured or temporarily unavailable, deterministic scoring remains available.
+If the prompt mentions a destination, that city is used for Open-Meteo forecast
+context. Otherwise the user's saved `preferred_city` is used. The stylist endpoint
+does not accept a separate city override; OpenAI ranks outfits but is not treated
+as a source of live weather data.
+
+Styling plans:
+
+```text
+POST /api/v1/styling_plans
+GET  /api/v1/styling_plans
+GET  /api/v1/styling_plans/:id
+```
+
+The create endpoint supports both structured form values and a prompt-only
+request. Explicit `plan_type`, `city`, `start_date`, and `end_date` values take
+priority. When they are omitted, the backend infers week versus vacation,
+destination, a default seven-day range, and durations such as `for 5 days`.
+Named weekday clauses are applied independently to each day:
+
+```json
+{
+  "styling_plan": {
+    "prompt": "Pack for Paris next week. Monday museum, Tuesday dinner, Wednesday concert."
+  }
+}
+```
 
 Each stylist call creates a user-owned recommendation request that groups its
 outfits and stores the prompt, extracted context, wardrobe suggestions, ranking

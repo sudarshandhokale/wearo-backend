@@ -6,10 +6,11 @@ module StylingPlans
     class << self
       def call(user:, attributes:)
         values = attributes.to_h.symbolize_keys
-        dates = dates_for(user, values)
+        interpretation = PromptInterpreter.call(user: user, attributes: values)
+        dates = dates_for(interpretation)
         plan = user.styling_plans.create!(
-          plan_type: values[:plan_type],
-          city: values[:city].presence || user.preferred_city,
+          plan_type: interpretation.plan_type,
+          city: interpretation.city,
           country_code: user.country_code,
           start_date: dates.first,
           end_date: dates.last,
@@ -23,27 +24,13 @@ module StylingPlans
 
       private
 
-      def dates_for(user, values)
-        start_on = parse_date(values[:start_date]) || default_start(user, values[:plan_type])
-        default_days = values[:plan_type] == "week" ? 7 : 7
-        end_on = parse_date(values[:end_date]) || (start_on + (default_days - 1).days)
+      def dates_for(interpretation)
+        start_on = interpretation.start_date
+        end_on = interpretation.end_date
         days = (end_on - start_on).to_i + 1
         raise InvalidDateRangeError unless days.between?(1, StylingPlan::MAX_DAYS)
 
         (start_on..end_on).to_a
-      end
-
-      def parse_date(value)
-        Date.iso8601(value.to_s) if value.present?
-      rescue Date::Error
-        raise InvalidDateRangeError
-      end
-
-      def default_start(user, plan_type)
-        today = Time.current.in_time_zone(user.timezone).to_date
-        return today.next_occurring(:monday) if plan_type == "week"
-
-        today + 1.day
       end
 
       def generate!(plan)
@@ -83,14 +70,25 @@ module StylingPlans
       end
 
       def context_for(plan, date, weather)
-        prompt = plan.prompt.presence || I18n.t("styling_plans.default_prompt.#{plan.plan_type}")
+        default_prompt = plan.prompt.presence || I18n.t("styling_plans.default_prompt.#{plan.plan_type}")
+        prompt = itinerary_for(default_prompt, date) || default_prompt
         extracted = Stylist::ExtractContext.call(prompt, timezone: plan.user.timezone)
         extracted.attributes.merge(
           "city" => plan.city,
+          "itinerary" => (prompt if prompt != default_prompt),
           "planned_for" => date.iso8601,
           "season" => extracted.attributes["season"] || inferred_season(weather),
           "weather" => weather
         ).compact
+      end
+
+      def itinerary_for(prompt, date)
+        day_name = Date::DAYNAMES.fetch(date.wday)
+        day_first = prompt.match(/\b#{Regexp.escape(day_name)}\b\s*(?:morning|afternoon|evening)?\s*(?::|-|is|for)?\s*([^,;.]+)/i)
+        return day_first[1].squish if day_first&.[](1).present?
+
+        activity_first = prompt.match(/(?:\A|[,;.])\s*([^,;.]+?)\s+on\s+#{Regexp.escape(day_name)}\b/i)
+        activity_first&.[](1)&.squish
       end
 
       def inferred_season(weather)
@@ -135,6 +133,7 @@ module StylingPlans
           occasion: context["occasion"],
           context: context,
           weather_context: weather,
+          name: Stylist::OutfitName.call(items: selected.items, occasion: context["occasion"]),
           recommendation_score: selected.score,
           score_breakdown: selected.score_breakdown,
           explanation: I18n.t("styling_plans.daily_explanation", date: I18n.l(date)),
