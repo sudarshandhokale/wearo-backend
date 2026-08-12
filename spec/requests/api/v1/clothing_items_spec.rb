@@ -33,20 +33,22 @@ RSpec.describe "API v1 clothing items", type: :request do
 
   describe "POST /api/v1/clothing_items" do
     it "creates a processing item with an attached image" do
-      post "/api/v1/clothing_items", params: {
-        clothing_item: {
-          image: uploaded_png,
-          name: "White sneakers",
-          category: "shoes",
-          subcategory: "sneakers",
-          primary_color: "white",
-          secondary_colors: [ "gray" ],
-          season_tags: [ "summer" ],
-          occasion_tags: [ "casual" ],
-          style_tags: [ "minimal" ],
-          formality_score: 3
-        }
-      }, headers: auth_headers(user)
+      expect do
+        post "/api/v1/clothing_items", params: {
+          clothing_item: {
+            image: uploaded_png,
+            name: "White sneakers",
+            category: "shoes",
+            subcategory: "sneakers",
+            primary_color: "white",
+            secondary_colors: [ "gray" ],
+            season_tags: [ "summer" ],
+            occasion_tags: [ "casual" ],
+            style_tags: [ "minimal" ],
+            formality_score: 3
+          }
+        }, headers: auth_headers(user)
+      end.to have_enqueued_job(AnalyzeClothingItemJob).exactly(:once)
 
       item = user.clothing_items.last
       expect(response).to have_http_status(:created)
@@ -106,6 +108,19 @@ RSpec.describe "API v1 clothing items", type: :request do
       expect(item.reload.name).to eq("Navy textured polo")
       expect(item.primary_color).to eq("navy")
     end
+
+    it "schedules analysis when the image is replaced" do
+      item = create(:clothing_item, user: user, wardrobe: user.wardrobe, status: "ready")
+
+      expect do
+        patch "/api/v1/clothing_items/#{item.id}", params: {
+          clothing_item: { image: uploaded_png("replacement.png") }
+        }, headers: auth_headers(user)
+      end.to have_enqueued_job(AnalyzeClothingItemJob).with(item.id)
+
+      expect(response).to have_http_status(:ok)
+      expect(item.reload).to be_processing
+    end
   end
 
   describe "DELETE /api/v1/clothing_items/:id" do
@@ -122,11 +137,27 @@ RSpec.describe "API v1 clothing items", type: :request do
   describe "POST /api/v1/clothing_items/:id/reanalyze" do
     it "marks the item as processing" do
       item = create(:clothing_item, user: user, wardrobe: user.wardrobe, status: "ready")
+      item.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES), filename: "polo.png", content_type: "image/png")
 
-      post "/api/v1/clothing_items/#{item.id}/reanalyze", headers: auth_headers(user)
+      expect do
+        post "/api/v1/clothing_items/#{item.id}/reanalyze", headers: auth_headers(user)
+      end.to have_enqueued_job(AnalyzeClothingItemJob).with(item.id)
 
       expect(response).to have_http_status(:ok)
       expect(item.reload).to be_processing
+    end
+
+
+    it "requires an attached image" do
+      item = create(:clothing_item, user: user, wardrobe: user.wardrobe, status: "ready")
+
+      expect do
+        post "/api/v1/clothing_items/#{item.id}/reanalyze", headers: auth_headers(user)
+      end.not_to have_enqueued_job(AnalyzeClothingItemJob)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("clothing_items.image_required"))
+      expect(item.reload).to be_ready
     end
   end
 end

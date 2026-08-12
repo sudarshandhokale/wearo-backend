@@ -7,6 +7,7 @@ en:
   clothing_items:
     create_failed: "Clothing item creation failed"
     deleted: "Clothing item deleted"
+    image_required: "A clothing item image is required"
     update_failed: "Clothing item update failed"
   errors:
     messages:
@@ -15,3 +16,8 @@ en:
     update_failed: "Profile update failed"
   style_profile:
     update_failed: "Style profile update failed"
+  stylist:
+    fallback_explanation: "This outfit is a strong match for %{occasion} based on your wardrobe and style preferences."
+    general_occasion: "your plans"
+    insufficient_wardrobe: "Add at least one ready top, bottom, and pair of shoes to receive recommendations"
+    invalid_prompt: "Describe where you are going or what you are dressing for"

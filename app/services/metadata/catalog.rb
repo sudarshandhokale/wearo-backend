@@ -93,6 +93,10 @@ module Metadata
         clothing_items: {
           categories: ClothingTaxonomy.categories_for_metadata,
           statuses: ClothingTaxonomy.statuses_for_metadata
+        },
+        outfits: {
+          roles: OutfitTaxonomy.roles_for_metadata,
+          statuses: OutfitTaxonomy.statuses_for_metadata
         }
       }
     end

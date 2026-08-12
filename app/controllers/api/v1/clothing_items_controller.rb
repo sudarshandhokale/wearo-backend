@@ -19,6 +19,7 @@ module Api
         item.image.attach(clothing_item_params[:image]) if clothing_item_params[:image].present?
 
         if item.save
+          schedule_analysis(item) if item.image.attached?
           success_response(data: item, serializer: ClothingItem::ViewSerializer, status: :created)
         else
           error_response(error: { message: I18n.t("clothing_items.create_failed"), details: item.errors.to_hash }, status: :unprocessable_entity)
@@ -26,8 +27,15 @@ module Api
       end
 
       def update
-        if @clothing_item.update(clothing_item_params.except(:image))
-          @clothing_item.image.attach(clothing_item_params[:image]) if clothing_item_params[:image].present?
+        image = clothing_item_params[:image]
+        @clothing_item.assign_attributes(clothing_item_params.except(:image))
+        @clothing_item.image.attach(image) if image.present?
+        @clothing_item.status = :processing if image.present?
+        @clothing_item.ai_analyzed_at = nil if image.present?
+        @clothing_item.ai_metadata = @clothing_item.ai_metadata.except("error") if image.present?
+
+        if @clothing_item.save
+          schedule_analysis(@clothing_item) if image.present?
           success_response(data: @clothing_item, serializer: ClothingItem::ViewSerializer)
         else
           error_response(error: { message: I18n.t("clothing_items.update_failed"), details: @clothing_item.errors.to_hash }, status: :unprocessable_entity)
@@ -40,7 +48,12 @@ module Api
       end
 
       def reanalyze
-        @clothing_item.update!(status: :processing)
+        unless @clothing_item.image.attached?
+          return error_response(error: { message: I18n.t("clothing_items.image_required") }, status: :unprocessable_entity)
+        end
+
+        @clothing_item.mark_processing!
+        schedule_analysis(@clothing_item)
         success_response(data: @clothing_item, serializer: ClothingItem::ViewSerializer)
       end
 
@@ -77,6 +90,10 @@ module Api
 
       def per_page
         [ [ params.fetch(:per_page, 25).to_i, 1 ].max, 100 ].min
+      end
+
+      def schedule_analysis(clothing_item)
+        AnalyzeClothingItemJob.perform_later(clothing_item.id)
       end
     end
   end

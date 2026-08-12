@@ -96,3 +96,45 @@ POST   /api/v1/clothing_items/:id/reanalyze
 
 Clothing item images are attached through Active Storage. Image responses return
 a signed blob id and a Rails storage proxy path.
+
+Image uploads and `reanalyze` requests enqueue `AnalyzeClothingItemJob`. The job
+uses the OpenAI Responses API with strict structured output, normalizes the result,
+and moves the item from `processing` to `ready` or `analysis_failed`.
+
+Configure clothing analysis locally with:
+
+```text
+OPENAI_API_KEY=...
+OPENAI_CLOTHING_MODEL=gpt-5.6-luna
+```
+
+Development uses the in-process Active Job async adapter. Production sends the
+`clothing_analysis` queue to Sidekiq.
+
+Outfits:
+
+```text
+GET /api/v1/outfits/:id
+```
+
+Outfits persist a recommendation context, score, explanation, and ordered links
+to the current user's clothing items. Outfit creation remains internal until the
+recommendation endpoint is introduced in Milestone 6.
+
+Stylist recommendations:
+
+```text
+POST /api/v1/stylist/recommendations
+```
+
+```json
+{
+  "prompt": "I have a casual dinner with friends tonight"
+}
+```
+
+The stylist extracts context, selects only ready items from the current user's
+wardrobe, builds bounded combinations, applies weighted compatibility scoring,
+and sends at most 30 compact candidates to the configured OpenAI model for final
+ranking. Up to three outfits are persisted and returned. When the provider is not
+configured or temporarily unavailable, deterministic scoring remains available.

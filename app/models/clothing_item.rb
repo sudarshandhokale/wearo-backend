@@ -3,6 +3,8 @@ class ClothingItem < ApplicationRecord
   belongs_to :wardrobe
 
   has_one_attached :image
+  has_many :outfit_items, dependent: :destroy
+  has_many :outfits, through: :outfit_items
 
   enum :status, {
     uploaded: "uploaded",
@@ -27,6 +29,14 @@ class ClothingItem < ApplicationRecord
 
   def discard!
     update!(discarded_at: Time.current)
+  end
+
+  def mark_processing!
+    update!(
+      status: :processing,
+      ai_analyzed_at: nil,
+      ai_metadata: ai_metadata.except("error")
+    )
   end
 
   private

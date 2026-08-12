@@ -9,12 +9,14 @@ Rails.application.routes.draw do
 
       get "health", to: "health#show"
       get "metadata", to: "metadata#index"
+      post "stylist/recommendations", to: "stylist#recommendations"
       resource :me, only: %i[show update], controller: :me
       resource :style_profile, only: %i[show update], controller: :style_profiles
       resource :wardrobe, only: :show, controller: :wardrobes
       resources :clothing_items do
         post :reanalyze, on: :member
       end
+      resources :outfits, only: :show
     end
   end
 
