@@ -35,6 +35,11 @@ debugging, `ACTIVE_JOB_QUEUE_ADAPTER=inline bin/rails server` runs jobs inside
 the web process, but this blocks the request and does not exercise Sidekiq
 retries.
 
+Development emails are written to `tmp/mails`. After registering, requesting a
+new confirmation, or requesting a password reset, open the latest file there to
+inspect the message and its frontend link. Sidekiq must be running to process the
+mail job.
+
 Run the test suite:
 
 ```sh
