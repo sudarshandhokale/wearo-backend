@@ -1,5 +1,6 @@
 module Ai
   class Error < StandardError; end
+  class GuardrailViolationError < Error; end
   class UsageLimitExceededError < Error; end
 
   class HttpError < Error

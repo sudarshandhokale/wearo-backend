@@ -22,6 +22,7 @@ class ClothingItem < ApplicationRecord
   validate :wardrobe_belongs_to_user
   validate :image_is_unique_for_user
   validate :cultural_tags_are_an_array
+  validate :ai_metadata_passes_guardrails
 
   before_validation :set_image_checksum
 
@@ -62,6 +63,18 @@ class ClothingItem < ApplicationRecord
 
   def cultural_tags_are_an_array
     errors.add(:cultural_tags, :invalid) unless cultural_tags.is_a?(Array)
+  end
+
+  def ai_metadata_passes_guardrails
+    Ai::Guardrails.model_text!(name, max_length: 120, allow_nil: true)
+    Ai::Guardrails.model_text!(garment_type, max_length: 80, allow_nil: true)
+    Ai::Guardrails.token_list!(secondary_colors, max_items: 8)
+    Ai::Guardrails.token_list!(season_tags, max_items: 8)
+    %i[occasion_tags style_tags cultural_tags].each do |attribute|
+      Ai::Guardrails.token_list!(public_send(attribute))
+    end
+  rescue Ai::GuardrailViolationError
+    errors.add(:base, :invalid)
   end
 
   def wardrobe_belongs_to_user

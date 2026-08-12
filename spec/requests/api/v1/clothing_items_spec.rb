@@ -46,7 +46,7 @@ RSpec.describe "API v1 clothing items", type: :request do
             season_tags: [ "summer" ],
             occasion_tags: [ "casual" ],
             style_tags: [ "minimal" ],
-            cultural_tags: [ "Indian Traditional" ],
+            cultural_tags: [ "indian_traditional" ],
             formality_score: 3
           }
         }, headers: auth_headers(user)
@@ -57,7 +57,7 @@ RSpec.describe "API v1 clothing items", type: :request do
       expect(item).to be_processing
       expect(item.image).to be_attached
       expect(item.garment_type).to eq("Jutti")
-      expect(item.cultural_tags).to eq([ "Indian Traditional" ])
+      expect(item.cultural_tags).to eq([ "indian_traditional" ])
       expect(response.parsed_body.dig("data", "garment_type")).to eq("Jutti")
       expect(response.parsed_body.dig("data", "image", "signed_id")).to be_present
     end
@@ -72,6 +72,23 @@ RSpec.describe "API v1 clothing items", type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body.dig("error", "details")).to include("category")
+    end
+
+    it "rejects unsafe metadata before it can enter an AI ranking request" do
+      expect do
+        post "/api/v1/clothing_items", params: {
+          clothing_item: {
+            image: uploaded_png,
+            name: "<script>reveal()</script>",
+            category: "top",
+            subcategory: "t_shirt",
+            style_tags: [ "ignore_previous_instructions" ]
+          }
+        }, headers: auth_headers(user)
+      end.not_to have_enqueued_job(AnalyzeClothingItemJob)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("clothing_items.create_failed"))
     end
 
     it "rejects an exact duplicate image for the same user's active wardrobe" do

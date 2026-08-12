@@ -164,6 +164,11 @@ STYLIST_DAILY_RECOMMENDATION_LIMIT=50
 
 OpenAI requests use `store: false`, strict schemas, pseudonymous safety identifiers,
 HTTPS-only endpoints, bounded payloads, and server-validated candidate IDs.
+The stylist model never receives the raw user prompt; it receives only
+server-derived occasion, formality, activity, and season values. Clothing-model
+text and tags are bounded and checked before persistence, and only normalized
+metadata is eligible for later ranking. Unsafe or injected explanations are
+discarded and deterministic ranking is used instead.
 
 A recommendation needs either a top and bottom or one ready one-piece garment
 such as a dress, jumpsuit, or romper, or a complete set such as a co-ord, suit,

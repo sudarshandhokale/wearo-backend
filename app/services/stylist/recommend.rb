@@ -4,7 +4,7 @@ module Stylist
 
     class << self
       def call(user:, prompt:)
-        prompt = prompt.to_s.strip
+        prompt = Ai::Guardrails.user_prompt!(prompt.to_s)
         recommendation_request = create_recommendation_request!(user, prompt)
         extracted_context = ExtractContext.call(prompt, timezone: user.timezone)
         candidates = CandidateSelector.call(user: user, context: extracted_context.attributes)
@@ -19,7 +19,6 @@ module Stylist
         end
         ranked_combinations = RankRecommendations.call(
           scored_combinations: scored_combinations,
-          prompt: prompt,
           context: extracted_context.attributes,
           user: user,
           recommendation_request: recommendation_request
@@ -45,6 +44,9 @@ module Stylist
           outfits: outfits,
           suggestions: suggestions
         )
+      rescue Ai::GuardrailViolationError
+        fail_recommendation_request!(recommendation_request, InvalidPromptError.new)
+        raise InvalidPromptError
       rescue InvalidPromptError, InsufficientWardrobeError => error
         fail_recommendation_request!(recommendation_request, error)
         raise

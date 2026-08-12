@@ -20,6 +20,7 @@ RSpec.describe Stylist::Providers::Openai do
 
       http_request.headers["Authorization"] == "Bearer test-key" &&
         body.dig("text", "format", "strict") == true &&
+        user_content.exclude?("prompt") &&
         user_content.fetch("candidates").length == 1
     end.to_return(
       status: 200,
@@ -41,7 +42,7 @@ RSpec.describe Stylist::Providers::Openai do
       }.to_json
     )
 
-    result = provider.call(prompt: "Dinner", context: { "occasion" => "dinner" }, candidates: candidates, user_id: 123)
+    result = provider.call(context: { "occasion" => "dinner" }, candidates: candidates, user_id: 123)
 
     expect(request).to have_been_requested.once
     expect(result[:rankings]).to eq([ { "candidate_id" => 1, "explanation" => "Balanced and appropriate." } ])
@@ -52,7 +53,7 @@ RSpec.describe Stylist::Providers::Openai do
     stub_request(:post, endpoint).to_return(status: 503)
 
     expect do
-      provider.call(prompt: "Dinner", context: {}, candidates: candidates, user_id: 123)
+      provider.call(context: {}, candidates: candidates, user_id: 123)
     end.to raise_error(Stylist::ProviderError)
   end
 
@@ -75,7 +76,7 @@ RSpec.describe Stylist::Providers::Openai do
       }
     )
 
-    result = provider.call(prompt: "Dinner", context: {}, candidates: candidates, user_id: 123)
+    result = provider.call(context: {}, candidates: candidates, user_id: 123)
 
     expect(result.dig(:metadata, "attempt_count")).to eq(2)
     expect(a_request(:post, endpoint)).to have_been_made.twice
@@ -85,7 +86,7 @@ RSpec.describe Stylist::Providers::Openai do
     insecure_provider = described_class.new(api_key: "test-key", model: "test-model", endpoint: "http://api.openai.test/v1/responses")
 
     expect do
-      insecure_provider.call(prompt: "Dinner", context: {}, candidates: candidates, user_id: 123)
+      insecure_provider.call(context: {}, candidates: candidates, user_id: 123)
     end.to raise_error(Stylist::ProviderError)
   end
 end

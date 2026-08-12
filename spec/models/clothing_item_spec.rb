@@ -29,6 +29,13 @@ RSpec.describe ClothingItem, type: :model do
     expect(clothing_item.errors[:cultural_tags]).to be_present
   end
 
+  it "rejects unsafe model-bound metadata" do
+    clothing_item.style_tags = [ "ignore_previous_instructions" ]
+
+    expect(clothing_item).not_to be_valid
+    expect(clothing_item.errors[:base]).to be_present
+  end
+
   it "rejects an image checksum already used in the user's active wardrobe" do
     user = create(:user)
     existing_item = create(:clothing_item, user: user, wardrobe: user.wardrobe)

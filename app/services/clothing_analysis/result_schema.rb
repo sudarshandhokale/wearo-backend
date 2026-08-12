@@ -1,5 +1,6 @@
 module ClothingAnalysis
   class ResultSchema
+    TOKEN_PATTERN = "^[a-z0-9]+(?:_[a-z0-9]+)*$".freeze
     PERSISTED_FIELDS = %w[
       name
       garment_type
@@ -22,18 +23,18 @@ module ClothingAnalysis
       additionalProperties: false,
       required: FIELDS,
       properties: {
-        name: { type: [ "string", "null" ] },
-        garment_type: { type: [ "string", "null" ] },
-        category: { type: [ "string", "null" ] },
-        subcategory: { type: [ "string", "null" ] },
-        primary_color: { type: [ "string", "null" ] },
-        secondary_colors: { type: "array", items: { type: "string" } },
-        pattern: { type: [ "string", "null" ] },
-        material: { type: [ "string", "null" ] },
-        season_tags: { type: "array", items: { type: "string" } },
-        occasion_tags: { type: "array", items: { type: "string" } },
-        style_tags: { type: "array", items: { type: "string" } },
-        cultural_tags: { type: "array", items: { type: "string" } },
+        name: { type: [ "string", "null" ], maxLength: 120 },
+        garment_type: { type: [ "string", "null" ], maxLength: 80 },
+        category: { type: [ "string", "null" ], maxLength: 50, pattern: TOKEN_PATTERN },
+        subcategory: { type: [ "string", "null" ], maxLength: 50, pattern: TOKEN_PATTERN },
+        primary_color: { type: [ "string", "null" ], maxLength: 50, pattern: TOKEN_PATTERN },
+        secondary_colors: { type: "array", maxItems: 8, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
+        pattern: { type: [ "string", "null" ], maxLength: 50, pattern: TOKEN_PATTERN },
+        material: { type: [ "string", "null" ], maxLength: 50, pattern: TOKEN_PATTERN },
+        season_tags: { type: "array", maxItems: 8, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
+        occasion_tags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
+        style_tags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
+        cultural_tags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
         formality_score: { type: [ "integer", "null" ], minimum: 1, maximum: 10 },
         confidence: { type: [ "number", "null" ], minimum: 0, maximum: 1 }
       }
@@ -47,6 +48,7 @@ module ClothingAnalysis
         raise InvalidResultError, "Analysis result is missing required fields" if missing_fields.any?
 
         validate_arrays!(result)
+        validate_guardrails!(result)
         validate_taxonomy!(result)
         validate_formality!(result["formality_score"])
         validate_confidence!(result["confidence"])
@@ -61,6 +63,21 @@ module ClothingAnalysis
           value = result[field]
           raise InvalidResultError, "Analysis result contains an invalid array" unless value.is_a?(Array) && value.all? { |item| item.is_a?(String) }
         end
+      end
+
+      def validate_guardrails!(result)
+        Ai::Guardrails.model_text!(result["name"], max_length: 120, allow_nil: true)
+        Ai::Guardrails.model_text!(result["garment_type"], max_length: 80, allow_nil: true)
+        %w[category subcategory primary_color pattern material].each do |field|
+          Ai::Guardrails.token!(result[field], allow_nil: true)
+        end
+        Ai::Guardrails.token_list!(result["secondary_colors"], max_items: 8)
+        Ai::Guardrails.token_list!(result["season_tags"], max_items: 8)
+        %w[occasion_tags style_tags cultural_tags].each do |field|
+          Ai::Guardrails.token_list!(result[field])
+        end
+      rescue Ai::GuardrailViolationError
+        raise InvalidResultError, "Analysis result failed guardrail validation"
       end
 
       def validate_taxonomy!(result)
