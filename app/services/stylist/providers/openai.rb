@@ -1,6 +1,5 @@
 require "json"
-require "net/http"
-require "timeout"
+require "digest"
 
 module Stylist
   module Providers
@@ -32,17 +31,20 @@ module Stylist
       def initialize(
         api_key: AppConfig.fetch(:openai_api_key),
         model: AppConfig.fetch(:openai_stylist_model, default: DEFAULT_MODEL),
-        endpoint: AppConfig.fetch(:openai_api_endpoint, default: ENDPOINT)
+        endpoint: AppConfig.fetch(:openai_api_endpoint, default: ENDPOINT),
+        http_client: Ai::HttpClient.new
       )
         @api_key = api_key
         @model = model
         @endpoint = URI(endpoint)
+        @http_client = http_client
       end
 
-      def call(prompt:, context:, candidates:)
+      def call(prompt:, context:, candidates:, user_id:)
         raise ConfigurationError, "OpenAI API key is not configured" if @api_key.blank?
 
-        response = perform_request(request_payload(prompt, context, candidates))
+        http_result = perform_request(request_payload(prompt, context, candidates, user_id))
+        response = http_result.response
         response_body = JSON.parse(response.body)
         result = JSON.parse(extract_output_text(response_body))
 
@@ -52,7 +54,8 @@ module Stylist
             "provider" => "openai",
             "model" => @model,
             "response_id" => response_body["id"],
-            "usage" => response_body["usage"]
+            "usage" => response_body["usage"],
+            "attempt_count" => http_result.attempt_count
           }.compact
         }
       rescue JSON::ParserError, KeyError
@@ -61,10 +64,11 @@ module Stylist
 
       private
 
-      def request_payload(prompt, context, candidates)
+      def request_payload(prompt, context, candidates, user_id)
         {
           model: @model,
           store: false,
+          safety_identifier: safety_identifier(user_id),
           input: [
             {
               role: "system",
@@ -88,24 +92,20 @@ module Stylist
       end
 
       def perform_request(payload)
-        request = Net::HTTP::Post.new(@endpoint)
-        request["Authorization"] = "Bearer #{@api_key}"
-        request["Content-Type"] = "application/json"
-        request.body = JSON.generate(payload)
+        @http_client.post(
+          endpoint: @endpoint,
+          headers: { "Authorization" => "Bearer #{@api_key}", "Content-Type" => "application/json" },
+          body: JSON.generate(payload)
+        )
+      rescue Ai::HttpError => error
+        provider_error = ProviderError.new("Stylist provider request failed")
+        provider_error.define_singleton_method(:attempt_count) { error.attempt_count }
+        raise provider_error
+      end
 
-        response = Net::HTTP.start(
-          @endpoint.host,
-          @endpoint.port,
-          use_ssl: @endpoint.scheme == "https",
-          open_timeout: 10,
-          read_timeout: 60
-        ) { |http| http.request(request) }
-
-        return response if response.is_a?(Net::HTTPSuccess)
-
-        raise ProviderError, "Stylist provider request failed with status #{response.code}"
-      rescue Timeout::Error, SocketError, Errno::ECONNREFUSED, Errno::ECONNRESET => error
-        raise ProviderError, "Stylist provider request failed: #{error.class.name}"
+      def safety_identifier(user_id)
+        secret = Rails.application.secret_key_base
+        Digest::SHA256.hexdigest("wearo-stylist:#{user_id}:#{secret}")
       end
 
       def extract_output_text(response_body)

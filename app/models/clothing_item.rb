@@ -1,6 +1,7 @@
 class ClothingItem < ApplicationRecord
   belongs_to :user
   belongs_to :wardrobe
+  has_many :ai_requests, as: :trackable, dependent: :nullify
 
   has_one_attached :image
   has_many :outfit_items, dependent: :destroy

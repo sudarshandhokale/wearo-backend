@@ -7,7 +7,7 @@ module Stylist
   class RecommendationResult
     include ActiveModel::Model
 
-    attr_accessor :context, :outfits, :suggestions
+    attr_accessor :recommendation_request, :context, :outfits, :suggestions
   end
 
   class Error < StandardError; end
@@ -22,6 +22,7 @@ module Stylist
     end
   end
   class InvalidRankingError < Error; end
+  class RecommendationLimitError < Error; end
   class ConfigurationError < Error; end
   class ProviderError < Error; end
 end

@@ -3,15 +3,22 @@ class ApplicationController < ActionController::API
 
   attr_reader :current_user
 
-  rescue_from ActiveRecord::RecordNotFound do |exception|
-    error_response(error: { message: exception.message }, status: :not_found)
+  rescue_from StandardError, with: :handle_internal_error
+
+  rescue_from ActiveRecord::RecordNotFound do
+    error_response(error: { message: I18n.t("errors.messages.not_found") }, status: :not_found)
   end
 
-  rescue_from ActionController::ParameterMissing do |exception|
-    error_response(error: { message: exception.message }, status: :bad_request)
+  rescue_from ActionController::ParameterMissing do
+    error_response(error: { message: I18n.t("errors.messages.bad_request") }, status: :bad_request)
   end
 
   private
+
+  def handle_internal_error(error)
+    Rails.logger.error("Unhandled API error: #{error.class}: #{error.message}")
+    error_response(error: { message: I18n.t("errors.messages.internal_server_error") }, status: :internal_server_error)
+  end
 
   def authenticate_user!
     return error_response(error: { message: I18n.t("errors.messages.unauthorized") }, status: :unauthorized) if bearer_token.blank?

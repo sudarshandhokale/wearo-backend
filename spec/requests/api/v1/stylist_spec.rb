@@ -39,9 +39,12 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       response_item_ids = body.fetch("outfits").flat_map { |outfit| outfit.fetch("items").pluck("clothing_item_id") }
       expect(response).to have_http_status(:created)
       expect(body.dig("context", "occasion")).to eq("dinner")
+      expect(body.dig("recommendation", "status")).to eq("completed")
+      expect(body.dig("recommendation", "ranking_source")).to eq("ai")
       expect(body.fetch("outfits").length).to eq(3)
       expect(response_item_ids).to all(be_in(owned_items.map(&:id)))
       expect(response_item_ids).not_to include(other_item.id)
+      expect(user.recommendation_requests.last.outfits.count).to eq(3)
     end
 
     it "recommends a one-piece outfit without requiring shoes" do
@@ -132,6 +135,10 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("stylist.insufficient_wardrobe"))
       expect(response.parsed_body.dig("error", "details", "missing_roles")).to contain_exactly("bottom", "one_piece", "drape", "set")
       expect(response.parsed_body.dig("error", "details", "required_combinations")).to eq([ %w[top bottom], %w[one_piece], %w[drape top], %w[set] ])
+      expect(user.recommendation_requests.last).to have_attributes(
+        status: "failed",
+        failure_code: "insufficient_wardrobe_error"
+      )
     end
 
     it "rejects a blank prompt with a localized message" do
@@ -141,10 +148,40 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("stylist.invalid_prompt"))
     end
 
+    it "rejects an oversized prompt without storing it" do
+      expect do
+        post "/api/v1/stylist/recommendations", params: { prompt: "a" * 1_001 }, headers: auth_headers(user)
+      end.not_to change(user.recommendation_requests, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("stylist.invalid_prompt"))
+    end
+
+    it "enforces the configured daily recommendation limit" do
+      allow(AppConfig).to receive(:fetch).and_call_original
+      allow(AppConfig).to receive(:fetch).with(:stylist_daily_recommendation_limit, default: 50).and_return("1")
+      create(:recommendation_request, user: user)
+
+      post "/api/v1/stylist/recommendations", params: { prompt: "Dinner" }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("stylist.recommendation_limit_reached"))
+    end
+
     it "requires authentication" do
       post "/api/v1/stylist/recommendations", params: { prompt: "Dinner" }
 
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "returns a localized generic error without exposing internal exception details" do
+      allow(Stylist::Recommend).to receive(:call).and_raise(StandardError, "sensitive internal details")
+
+      post "/api/v1/stylist/recommendations", params: { prompt: "Dinner" }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:internal_server_error)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("errors.messages.internal_server_error"))
+      expect(response.body).not_to include("sensitive internal details")
     end
   end
 end

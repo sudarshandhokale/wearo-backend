@@ -9,6 +9,7 @@ Rails.application.routes.draw do
 
       get "health", to: "health#show"
       get "metadata", to: "metadata#index"
+      get "ai/usage", to: "ai_usage#show"
       post "stylist/recommendations", to: "stylist#recommendations"
       resource :me, only: %i[show update], controller: :me
       resource :style_profile, only: %i[show update], controller: :style_profiles
@@ -16,7 +17,8 @@ Rails.application.routes.draw do
       resources :clothing_items do
         post :reanalyze, on: :member
       end
-      resources :outfits, only: :show
+      resources :recommendation_requests, only: %i[index show]
+      resources :outfits, only: %i[index show update]
     end
   end
 

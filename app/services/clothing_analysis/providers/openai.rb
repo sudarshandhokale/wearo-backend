@@ -1,7 +1,6 @@
 require "base64"
 require "digest"
 require "json"
-require "net/http"
 
 module ClothingAnalysis
   module Providers
@@ -12,18 +11,21 @@ module ClothingAnalysis
       def initialize(
         api_key: AppConfig.fetch(:openai_api_key),
         model: AppConfig.fetch(:openai_clothing_model, default: DEFAULT_MODEL),
-        endpoint: AppConfig.fetch(:openai_api_endpoint, default: ENDPOINT)
+        endpoint: AppConfig.fetch(:openai_api_endpoint, default: ENDPOINT),
+        http_client: Ai::HttpClient.new
       )
         @api_key = api_key
         @model = model
         @endpoint = URI(endpoint)
+        @http_client = http_client
       end
 
       def call(image:, user_id:)
         raise ConfigurationError, "OpenAI API key is not configured" if @api_key.blank?
         raise InvalidResultError, "Clothing item image is required" unless image.attached?
 
-        response = perform_request(request_payload(image, user_id))
+        http_result = perform_request(request_payload(image, user_id))
+        response = http_result.response
         response_body = JSON.parse(response.body)
 
         {
@@ -32,7 +34,8 @@ module ClothingAnalysis
             "provider" => "openai",
             "model" => @model,
             "response_id" => response_body["id"],
-            "usage" => response_body["usage"]
+            "usage" => response_body["usage"],
+            "attempt_count" => http_result.attempt_count
           }.compact
         }
       rescue JSON::ParserError
@@ -68,24 +71,15 @@ module ClothingAnalysis
       end
 
       def perform_request(payload)
-        request = Net::HTTP::Post.new(@endpoint)
-        request["Authorization"] = "Bearer #{@api_key}"
-        request["Content-Type"] = "application/json"
-        request.body = JSON.generate(payload)
-
-        response = Net::HTTP.start(
-          @endpoint.host,
-          @endpoint.port,
-          use_ssl: @endpoint.scheme == "https",
-          open_timeout: 10,
-          read_timeout: 60
-        ) { |http| http.request(request) }
-
-        return response if response.is_a?(Net::HTTPSuccess)
-
-        raise ProviderError, "Analysis provider request failed with status #{response.code}"
-      rescue Timeout::Error, SocketError, Errno::ECONNREFUSED, Errno::ECONNRESET => error
-        raise ProviderError, "Analysis provider request failed: #{error.class.name}"
+        @http_client.post(
+          endpoint: @endpoint,
+          headers: { "Authorization" => "Bearer #{@api_key}", "Content-Type" => "application/json" },
+          body: JSON.generate(payload)
+        )
+      rescue Ai::HttpError => error
+        provider_error = ProviderError.new("Analysis provider request failed")
+        provider_error.define_singleton_method(:attempt_count) { error.attempt_count }
+        raise provider_error
       end
 
       def extract_output_text(response_body)

@@ -13,6 +13,11 @@ RSpec.describe "API v1 metadata", type: :request do
         "code" => "US",
         "name" => "United States of America"
       )
+      expect(body.dig("data", "timezones")).to include(
+        "key" => "Europe/Berlin",
+        "label" => "Europe/Berlin"
+      )
+      expect(body.dig("data", "timezone_countries", "Europe/Berlin")).to eq("DE")
       expect(body.dig("data", "style_profile", "preferred_styles")).to include(
         "key" => "minimal",
         "label" => "Minimal"
@@ -58,10 +63,11 @@ RSpec.describe "API v1 metadata", type: :request do
       )
     end
 
-    it "requires authentication" do
+    it "is available before authentication for signup defaults" do
       get "/api/v1/metadata"
 
-      expect(response).to have_http_status(:unauthorized)
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("data", "countries")).to be_present
     end
   end
 end

@@ -6,14 +6,30 @@ module Stylist
     RECOMMENDATION_LIMIT = 3
 
     class << self
-      def call(scored_combinations:, prompt:, context:, provider: Providers::Openai.new)
+      def call(scored_combinations:, prompt:, context:, user:, recommendation_request:, provider: Providers::Openai.new)
         candidates = scored_combinations.sort_by { |combination| -combination.score }.first(CANDIDATE_LIMIT)
         return [] if candidates.empty?
 
-        provider_result = provider.call(prompt: prompt, context: context, candidates: serialize_candidates(candidates))
-        build_ranked_combinations(candidates, provider_result)
-      rescue ConfigurationError, ProviderError, InvalidRankingError
-        deterministic_ranking(candidates, context)
+        ai_request = Ai::UsageTracker.start!(
+          user: user,
+          operation: "stylist_recommendation",
+          trackable: recommendation_request,
+          reserved_tokens: 3_000
+        )
+        provider_result = provider.call(
+          prompt: prompt,
+          context: context,
+          candidates: serialize_candidates(candidates),
+          user_id: user.id
+        )
+        ranked = build_ranked_combinations(candidates, provider_result)
+        Ai::UsageTracker.succeed!(ai_request, provider_result.fetch(:metadata, {}))
+        ranked
+      rescue Ai::UsageLimitExceededError
+        deterministic_ranking(candidates, context, reason: "usage_limit")
+      rescue ConfigurationError, ProviderError, InvalidRankingError, KeyError => error
+        Ai::UsageTracker.fail!(ai_request, error)
+        deterministic_ranking(candidates, context, reason: error.class.name.demodulize.underscore)
       end
 
       private
@@ -76,12 +92,12 @@ module Stylist
         ranked
       end
 
-      def deterministic_ranking(candidates, context)
+      def deterministic_ranking(candidates, context, reason: nil)
         Array(candidates).first(RECOMMENDATION_LIMIT).map do |candidate|
           ranked_combination(
             candidate,
             fallback_explanation(context["occasion"]),
-            { "provider" => "deterministic" }
+            { "provider" => "deterministic", "fallback_reason" => reason }.compact
           )
         end
       end

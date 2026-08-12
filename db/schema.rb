@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_12_130000) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_12_140100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,31 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_130000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "ai_requests", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "trackable_type"
+    t.bigint "trackable_id"
+    t.string "operation", null: false
+    t.string "status", default: "pending", null: false
+    t.string "provider"
+    t.string "model"
+    t.string "response_id"
+    t.integer "reserved_tokens", default: 0, null: false
+    t.integer "input_tokens", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.integer "total_tokens", default: 0, null: false
+    t.integer "attempt_count", default: 0, null: false
+    t.string "failure_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["response_id"], name: "index_ai_requests_on_response_id", unique: true, where: "(response_id IS NOT NULL)"
+    t.index ["trackable_type", "trackable_id"], name: "index_ai_requests_on_trackable"
+    t.index ["user_id", "created_at"], name: "index_ai_requests_on_user_id_and_created_at"
+    t.index ["user_id", "status", "created_at"], name: "index_ai_requests_on_user_id_and_status_and_created_at"
+    t.index ["user_id"], name: "index_ai_requests_on_user_id"
   end
 
   create_table "clothing_items", force: :cascade do |t|
@@ -109,10 +134,40 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_130000) do
     t.datetime "recommended_for"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "recommendation_request_id"
+    t.jsonb "score_breakdown", default: {}, null: false
+    t.integer "rating"
+    t.string "feedback_note"
+    t.datetime "status_updated_at"
+    t.index ["recommendation_request_id"], name: "index_outfits_on_recommendation_request_id"
     t.index ["recommended_for"], name: "index_outfits_on_recommended_for"
     t.index ["user_id", "created_at"], name: "index_outfits_on_user_id_and_created_at"
     t.index ["user_id", "status"], name: "index_outfits_on_user_id_and_status"
     t.index ["user_id"], name: "index_outfits_on_user_id"
+  end
+
+  create_table "recommendation_requests", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "prompt", null: false
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "wardrobe_suggestions", default: [], null: false
+    t.string "status", default: "processing", null: false
+    t.string "ranking_source"
+    t.string "provider"
+    t.string "model"
+    t.string "response_id"
+    t.integer "input_tokens", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.integer "total_tokens", default: 0, null: false
+    t.integer "attempt_count", default: 0, null: false
+    t.string "failure_code"
+    t.datetime "recommended_for"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "created_at"], name: "index_recommendation_requests_on_user_id_and_created_at"
+    t.index ["user_id", "status"], name: "index_recommendation_requests_on_user_id_and_status"
+    t.index ["user_id"], name: "index_recommendation_requests_on_user_id"
   end
 
   create_table "style_profiles", force: :cascade do |t|
@@ -156,11 +211,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_130000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "ai_requests", "users"
   add_foreign_key "clothing_items", "users"
   add_foreign_key "clothing_items", "wardrobes"
   add_foreign_key "outfit_items", "clothing_items"
   add_foreign_key "outfit_items", "outfits"
+  add_foreign_key "outfits", "recommendation_requests"
   add_foreign_key "outfits", "users"
+  add_foreign_key "recommendation_requests", "users"
   add_foreign_key "style_profiles", "users"
   add_foreign_key "wardrobes", "users"
 end

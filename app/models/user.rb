@@ -5,6 +5,8 @@ class User < ApplicationRecord
   has_one :wardrobe, dependent: :destroy
   has_many :outfits, dependent: :destroy
   has_many :clothing_items, dependent: :destroy
+  has_many :recommendation_requests, dependent: :destroy
+  has_many :ai_requests, dependent: :destroy
 
   validates :first_name, :timezone, :country_code, presence: true
 

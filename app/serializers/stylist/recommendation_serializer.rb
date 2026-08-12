@@ -1,5 +1,9 @@
 class Stylist::RecommendationSerializer < ApplicationSerializer
-  attributes :context, :outfits, :suggestions
+  attributes :recommendation, :context, :outfits, :suggestions
+
+  def recommendation
+    RecommendationRequest::ViewSerializer.new(object.recommendation_request).serializable_hash.except(:outfits)
+  end
 
   def context
     object.context

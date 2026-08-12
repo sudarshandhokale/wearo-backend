@@ -1,12 +1,17 @@
 class Outfit::ViewSerializer < ApplicationSerializer
   attributes :id,
+             :recommendation_request_id,
              :prompt,
              :occasion,
              :context,
              :weather_context,
              :recommendation_score,
+             :score_breakdown,
              :explanation,
              :status,
+             :rating,
+             :feedback_note,
+             :status_updated_at,
              :recommended_for,
              :items,
              :created_at,
@@ -18,6 +23,10 @@ class Outfit::ViewSerializer < ApplicationSerializer
 
   def recommended_for
     format_datetime_value(object.recommended_for)
+  end
+
+  def status_updated_at
+    format_datetime_value(object.status_updated_at)
   end
 
   def items

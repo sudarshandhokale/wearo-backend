@@ -34,7 +34,7 @@ module Stylist
 
     class << self
       def call(prompt, timezone:, now: Time.current)
-        raise InvalidPromptError if prompt.blank?
+        raise InvalidPromptError if prompt.blank? || prompt.length > 1_000
 
         local_now = now.in_time_zone(timezone.presence || "UTC")
         attributes = {

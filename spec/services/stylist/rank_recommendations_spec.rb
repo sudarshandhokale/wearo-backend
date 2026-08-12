@@ -2,6 +2,8 @@ require "rails_helper"
 
 RSpec.describe Stylist::RankRecommendations do
   let(:item) { build_stubbed(:clothing_item) }
+  let(:user) { create(:user) }
+  let(:recommendation_request) { create(:recommendation_request, user: user) }
   let(:candidates) do
     4.times.map do |index|
       Stylist::ScoredCombination.new(
@@ -23,7 +25,14 @@ RSpec.describe Stylist::RankRecommendations do
       metadata: { "provider" => "test" }
     )
 
-    result = described_class.call(scored_combinations: candidates, prompt: "Dinner", context: { "occasion" => "dinner" }, provider: provider)
+    result = described_class.call(
+      scored_combinations: candidates,
+      prompt: "Dinner",
+      context: { "occasion" => "dinner" },
+      user: user,
+      recommendation_request: recommendation_request,
+      provider: provider
+    )
 
     expect(result.length).to eq(3)
     expect(result.first.score).to eq(89)
@@ -34,9 +43,16 @@ RSpec.describe Stylist::RankRecommendations do
     provider = instance_double(Stylist::Providers::Openai)
     allow(provider).to receive(:call).and_raise(Stylist::ProviderError)
 
-    result = described_class.call(scored_combinations: candidates, prompt: "Dinner", context: { "occasion" => "dinner" }, provider: provider)
+    result = described_class.call(
+      scored_combinations: candidates,
+      prompt: "Dinner",
+      context: { "occasion" => "dinner" },
+      user: user,
+      recommendation_request: recommendation_request,
+      provider: provider
+    )
 
     expect(result.map(&:score)).to eq([ 90, 89, 88 ])
-    expect(result.first.ranking_metadata).to eq("provider" => "deterministic")
+    expect(result.first.ranking_metadata).to include("provider" => "deterministic")
   end
 end

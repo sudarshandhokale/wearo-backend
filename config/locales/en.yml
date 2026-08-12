@@ -12,7 +12,12 @@ en:
     update_failed: "Clothing item update failed"
   errors:
     messages:
+      bad_request: "The request is invalid"
+      internal_server_error: "Something went wrong"
+      not_found: "The requested resource was not found"
       unauthorized: "Unauthorized"
+  outfits:
+    update_failed: "Outfit feedback could not be updated"
   profile:
     update_failed: "Profile update failed"
   style_profile:
@@ -22,6 +27,7 @@ en:
     general_occasion: "your plans"
     insufficient_wardrobe: "Add a ready one-piece garment, complete set, top and bottom, or drape and top to receive recommendations"
     invalid_prompt: "Describe where you are going or what you are dressing for"
+    recommendation_limit_reached: "You have reached today's recommendation limit"
     suggestions:
       add_accessory: "Add accessories to receive more varied outfit suggestions"
       add_outerwear: "Add outerwear to complete more cool-weather and formal outfits"

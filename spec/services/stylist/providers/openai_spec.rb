@@ -41,7 +41,7 @@ RSpec.describe Stylist::Providers::Openai do
       }.to_json
     )
 
-    result = provider.call(prompt: "Dinner", context: { "occasion" => "dinner" }, candidates: candidates)
+    result = provider.call(prompt: "Dinner", context: { "occasion" => "dinner" }, candidates: candidates, user_id: 123)
 
     expect(request).to have_been_requested.once
     expect(result[:rankings]).to eq([ { "candidate_id" => 1, "explanation" => "Balanced and appropriate." } ])
@@ -52,7 +52,40 @@ RSpec.describe Stylist::Providers::Openai do
     stub_request(:post, endpoint).to_return(status: 503)
 
     expect do
-      provider.call(prompt: "Dinner", context: {}, candidates: candidates)
+      provider.call(prompt: "Dinner", context: {}, candidates: candidates, user_id: 123)
+    end.to raise_error(Stylist::ProviderError)
+  end
+
+  it "retries a transient response and reports the attempt count" do
+    stub_request(:post, endpoint).to_return(
+      { status: 503 },
+      {
+        status: 200,
+        headers: { "Content-Type" => "application/json" },
+        body: {
+          id: "resp_retry",
+          output: [
+            {
+              type: "message",
+              content: [ { type: "output_text", text: { rankings: [ { candidate_id: 1, explanation: "Ready." } ] }.to_json } ]
+            }
+          ],
+          usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 }
+        }.to_json
+      }
+    )
+
+    result = provider.call(prompt: "Dinner", context: {}, candidates: candidates, user_id: 123)
+
+    expect(result.dig(:metadata, "attempt_count")).to eq(2)
+    expect(a_request(:post, endpoint)).to have_been_made.twice
+  end
+
+  it "rejects a non-HTTPS provider endpoint" do
+    insecure_provider = described_class.new(api_key: "test-key", model: "test-model", endpoint: "http://api.openai.test/v1/responses")
+
+    expect do
+      insecure_provider.call(prompt: "Dinner", context: {}, candidates: candidates, user_id: 123)
     end.to raise_error(Stylist::ProviderError)
   end
 end

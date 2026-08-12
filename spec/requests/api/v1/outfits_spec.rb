@@ -34,6 +34,7 @@ RSpec.describe "API v1 outfits", type: :request do
       get "/api/v1/outfits/#{outfit.id}", headers: auth_headers(user)
 
       expect(response).to have_http_status(:not_found)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("errors.messages.not_found"))
     end
 
     it "requires authentication" do
@@ -42,6 +43,39 @@ RSpec.describe "API v1 outfits", type: :request do
       get "/api/v1/outfits/#{outfit.id}"
 
       expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
+  describe "PATCH /api/v1/outfits/:id" do
+    it "stores user feedback and status changes" do
+      outfit = create(:outfit, user: user)
+
+      patch "/api/v1/outfits/#{outfit.id}", params: {
+        outfit: { status: "worn", rating: 5, feedback_note: "Worked well for dinner" }
+      }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:ok)
+      expect(outfit.reload).to have_attributes(status: "worn", rating: 5, feedback_note: "Worked well for dinner")
+      expect(outfit.status_updated_at).to be_present
+    end
+
+    it "rejects invalid feedback values with a localized message" do
+      outfit = create(:outfit, user: user)
+
+      patch "/api/v1/outfits/#{outfit.id}", params: {
+        outfit: { status: "unknown", rating: 9 }
+      }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("outfits.update_failed"))
+    end
+
+    it "does not update another user's outfit" do
+      outfit = create(:outfit)
+
+      patch "/api/v1/outfits/#{outfit.id}", params: { outfit: { status: "worn" } }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:not_found)
     end
   end
 end

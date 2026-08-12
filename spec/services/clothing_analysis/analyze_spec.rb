@@ -22,13 +22,20 @@ RSpec.describe ClothingAnalysis::Analyze do
         formality_score: 2,
         confidence: 0.88
       },
-      metadata: { "provider" => "test" }
+      metadata: {
+        "provider" => "test",
+        "model" => "test-model",
+        "response_id" => "resp_analysis_1",
+        "attempt_count" => 1,
+        "usage" => { "input_tokens" => 80, "output_tokens" => 20, "total_tokens" => 100 }
+      }
     )
 
     result = described_class.call(item, provider: provider)
 
     expect(result.attributes).to include("subcategory" => "t_shirt", "primary_color" => "navy")
-    expect(result.metadata).to eq("provider" => "test", "confidence" => 0.88)
+    expect(result.metadata).to include("provider" => "test", "confidence" => 0.88)
+    expect(item.ai_requests.last).to have_attributes(status: "succeeded", total_tokens: 100)
   end
 
   it "rejects a subcategory outside the normalized category" do

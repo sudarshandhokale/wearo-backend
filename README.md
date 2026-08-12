@@ -115,17 +115,23 @@ Development uses the in-process Active Job async adapter. Production sends the
 Outfits:
 
 ```text
-GET /api/v1/outfits/:id
+GET   /api/v1/outfits
+GET   /api/v1/outfits/:id
+PATCH /api/v1/outfits/:id
 ```
 
-Outfits persist a recommendation context, score, explanation, and ordered links
-to the current user's clothing items. Outfit creation remains internal until the
-recommendation endpoint is introduced in Milestone 6.
+Outfits persist recommendation context, score breakdown, explanation, ordered
+clothing items, and optional user feedback. Feedback updates accept `status`
+(`recommended`, `saved`, `worn`, or `dismissed`), `rating` from 1 to 5, and a
+short `feedback_note`.
 
 Stylist recommendations:
 
 ```text
 POST /api/v1/stylist/recommendations
+GET  /api/v1/recommendation_requests
+GET  /api/v1/recommendation_requests/:id
+GET  /api/v1/ai/usage
 ```
 
 ```json
@@ -139,6 +145,25 @@ wardrobe, builds bounded combinations, applies weighted compatibility scoring,
 and sends at most 30 compact candidates to the configured OpenAI model for final
 ranking. Up to three outfits are persisted and returned. When the provider is not
 configured or temporarily unavailable, deterministic scoring remains available.
+
+Each stylist call creates a user-owned recommendation request that groups its
+outfits and stores the prompt, extracted context, wardrobe suggestions, ranking
+source, provider/model identifiers, retry count, token usage, completion state,
+and sanitized failure code. Raw provider responses are not stored.
+
+Both clothing analysis and stylist ranking create `AiRequest` accounting records.
+Calls reserve capacity before contacting the provider, retry transient `429` and
+`5xx` failures up to three attempts, and release the reservation on completion.
+Limits reset according to the user's local date and are configurable with:
+
+```text
+AI_DAILY_TOKEN_LIMIT=50000
+AI_DAILY_REQUEST_LIMIT=100
+STYLIST_DAILY_RECOMMENDATION_LIMIT=50
+```
+
+OpenAI requests use `store: false`, strict schemas, pseudonymous safety identifiers,
+HTTPS-only endpoints, bounded payloads, and server-validated candidate IDs.
 
 A recommendation needs either a top and bottom or one ready one-piece garment
 such as a dress, jumpsuit, or romper, or a complete set such as a co-ord, suit,

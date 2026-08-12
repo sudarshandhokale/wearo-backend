@@ -97,6 +97,8 @@ module Metadata
     def self.all
       {
         countries: countries,
+        timezones: timezones,
+        timezone_countries: timezone_countries,
         style_profile: serialize_options(STYLE_OPTIONS),
         clothing_items: {
           categories: ClothingTaxonomy.categories_for_metadata,
@@ -117,6 +119,18 @@ module Metadata
           name: country.iso_short_name
         }
       end.sort_by { |country| country[:name] }
+    end
+
+    def self.timezones
+      TZInfo::Timezone.all_identifiers.map do |identifier|
+        { key: identifier, label: identifier.tr("_", " ") }
+      end
+    end
+
+    def self.timezone_countries
+      TZInfo::Country.all.each_with_object({}) do |country, mapping|
+        country.zone_identifiers.each { |identifier| mapping[identifier] ||= country.code }
+      end
     end
 
     def self.serialize_options(options)
