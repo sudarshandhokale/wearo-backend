@@ -78,6 +78,7 @@ module Api
       def clothing_item_params
         params.require(:clothing_item).permit(
           :name,
+          :garment_type,
           :category,
           :subcategory,
           :primary_color,
@@ -88,7 +89,8 @@ module Api
           secondary_colors: [],
           season_tags: [],
           occasion_tags: [],
-          style_tags: []
+          style_tags: [],
+          cultural_tags: []
         )
       end
 

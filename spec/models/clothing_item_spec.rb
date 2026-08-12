@@ -22,6 +22,13 @@ RSpec.describe ClothingItem, type: :model do
     expect { item.discard! }.to change { item.reload.discarded? }.from(false).to(true)
   end
 
+  it "requires cultural tags to be an array" do
+    clothing_item.cultural_tags = "traditional"
+
+    expect(clothing_item).not_to be_valid
+    expect(clothing_item.errors[:cultural_tags]).to be_present
+  end
+
   it "rejects an image checksum already used in the user's active wardrobe" do
     user = create(:user)
     existing_item = create(:clothing_item, user: user, wardrobe: user.wardrobe)

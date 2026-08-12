@@ -1,5 +1,5 @@
 class Stylist::RecommendationSerializer < ApplicationSerializer
-  attributes :context, :outfits
+  attributes :context, :outfits, :suggestions
 
   def context
     object.context
@@ -9,5 +9,9 @@ class Stylist::RecommendationSerializer < ApplicationSerializer
     object.outfits.map do |outfit|
       Outfit::ViewSerializer.new(outfit).serializable_hash
     end
+  end
+
+  def suggestions
+    object.suggestions
   end
 end

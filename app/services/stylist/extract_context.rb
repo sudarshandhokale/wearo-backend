@@ -5,12 +5,16 @@ module Stylist
       "dinner" => /\b(dinner|restaurant|supper)\b/i,
       "date_night" => /\b(date|romantic)\b/i,
       "party" => /\b(party|club|celebration|birthday)\b/i,
+      "wedding" => /\b(wedding|reception|sangeet|mehndi|haldi)\b/i,
+      "festival" => /\b(festival|diwali|holi|navratri|eid|onam|pongal|baisakhi|durga puja)\b/i,
+      "religious_ceremony" => /\b(puja|pooja|temple|religious ceremony)\b/i,
+      "family_function" => /\b(family function|family gathering)\b/i,
       "workout" => /\b(workout|gym|training|run|running|exercise)\b/i,
       "outdoor" => /\b(picnic|hike|hiking|outdoor|park|camping)\b/i,
       "travel" => /\b(travel|flight|airport|road trip)\b/i
     }.freeze
     FORMALITY_RULES = {
-      "formal" => /\b(formal|wedding|gala|black tie|ceremony)\b/i,
+      "formal" => /\b(formal|wedding|reception|sangeet|mehndi|haldi|gala|black tie|ceremony)\b/i,
       "smart_casual" => /\b(smart casual|work|office|business|meeting|interview|dinner|restaurant|date)\b/i,
       "casual" => /\b(casual|picnic|friends|weekend|workout|gym|hike|travel)\b/i
     }.freeze

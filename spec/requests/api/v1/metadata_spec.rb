@@ -17,12 +17,22 @@ RSpec.describe "API v1 metadata", type: :request do
         "key" => "minimal",
         "label" => "Minimal"
       )
+      expect(body.dig("data", "style_profile", "preferred_styles")).to include(
+        "key" => "traditional_indian",
+        "label" => "Traditional Indian"
+      )
       expect(body.dig("data", "style_profile", "fit_preferences", "tops")).to include(
         "key" => "regular",
         "label" => "Regular"
       )
       expect(body.dig("data", "clothing_items", "categories")).to include(
         hash_including("key" => "top", "label" => "Top")
+      )
+      expect(body.dig("data", "clothing_items", "categories")).to include(
+        hash_including("key" => "one_piece", "label" => "One Piece")
+      )
+      expect(body.dig("data", "clothing_items", "categories")).to include(
+        hash_including("key" => "set", "label" => "Set")
       )
       expect(body.dig("data", "clothing_items", "statuses")).to include(
         "key" => "ready",
@@ -31,6 +41,16 @@ RSpec.describe "API v1 metadata", type: :request do
       expect(body.dig("data", "outfits", "roles")).to include(
         "key" => "shoes",
         "label" => "Shoes"
+      )
+      expect(body.dig("data", "outfits", "base_compositions")).to include(
+        "key" => "set",
+        "label" => "Set",
+        "roles" => [ "set" ]
+      )
+      expect(body.dig("data", "outfits", "base_compositions")).to include(
+        "key" => "drape",
+        "label" => "Drape and Top",
+        "roles" => %w[drape top]
       )
       expect(body.dig("data", "outfits", "statuses")).to include(
         "key" => "recommended",

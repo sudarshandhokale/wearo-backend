@@ -139,3 +139,22 @@ wardrobe, builds bounded combinations, applies weighted compatibility scoring,
 and sends at most 30 compact candidates to the configured OpenAI model for final
 ranking. Up to three outfits are persisted and returned. When the provider is not
 configured or temporarily unavailable, deterministic scoring remains available.
+
+A recommendation needs either a top and bottom or one ready one-piece garment
+such as a dress, jumpsuit, or romper, or a complete set such as a co-ord, suit,
+or traditional set. Shoes, outerwear, and accessories are optional. Missing
+optional roles are returned as localized wardrobe suggestions without blocking
+available recommendations. Taxonomy and recommendation rules are garment-driven
+and do not require a gender classification on the user.
+
+Indian traditional clothing supports both complete ensembles and individual
+pieces. Complete saree, lehenga, salwar, kurta, sherwani, and anarkali ensembles
+use the `set` category. Individual sarees use `drape` and combine with a blouse
+or choli in `top`; kurtas combine with salwar, churidar, pajama, dhoti, palazzo,
+or lehenga pieces. Dupattas, traditional footwear, and jewelry remain optional.
+
+Global garments use universal composition categories plus open metadata. The
+`garment_type` field preserves a local name such as `hanbok`, `abaya`, or `kilt`,
+and `cultural_tags` preserves descriptors without requiring a country-specific
+closed list. Every category includes an `other` subtype so unfamiliar garments
+remain editable and usable instead of failing analysis.

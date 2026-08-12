@@ -7,16 +7,17 @@ module Stylist
   class RecommendationResult
     include ActiveModel::Model
 
-    attr_accessor :context, :outfits
+    attr_accessor :context, :outfits, :suggestions
   end
 
   class Error < StandardError; end
   class InvalidPromptError < Error; end
   class InsufficientWardrobeError < Error
-    attr_reader :missing_roles
+    attr_reader :missing_roles, :required_combinations
 
-    def initialize(missing_roles)
+    def initialize(missing_roles, required_combinations:)
       @missing_roles = missing_roles
+      @required_combinations = required_combinations
       super("Wardrobe is missing required clothing roles")
     end
   end

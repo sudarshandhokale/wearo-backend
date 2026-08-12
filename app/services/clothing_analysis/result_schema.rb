@@ -2,6 +2,7 @@ module ClothingAnalysis
   class ResultSchema
     PERSISTED_FIELDS = %w[
       name
+      garment_type
       category
       subcategory
       primary_color
@@ -11,6 +12,7 @@ module ClothingAnalysis
       season_tags
       occasion_tags
       style_tags
+      cultural_tags
       formality_score
     ].freeze
     FIELDS = (PERSISTED_FIELDS + [ "confidence" ]).freeze
@@ -21,6 +23,7 @@ module ClothingAnalysis
       required: FIELDS,
       properties: {
         name: { type: [ "string", "null" ] },
+        garment_type: { type: [ "string", "null" ] },
         category: { type: [ "string", "null" ] },
         subcategory: { type: [ "string", "null" ] },
         primary_color: { type: [ "string", "null" ] },
@@ -30,6 +33,7 @@ module ClothingAnalysis
         season_tags: { type: "array", items: { type: "string" } },
         occasion_tags: { type: "array", items: { type: "string" } },
         style_tags: { type: "array", items: { type: "string" } },
+        cultural_tags: { type: "array", items: { type: "string" } },
         formality_score: { type: [ "integer", "null" ], minimum: 1, maximum: 10 },
         confidence: { type: [ "number", "null" ], minimum: 0, maximum: 1 }
       }
@@ -53,7 +57,7 @@ module ClothingAnalysis
       private
 
       def validate_arrays!(result)
-        %w[secondary_colors season_tags occasion_tags style_tags].each do |field|
+        %w[secondary_colors season_tags occasion_tags style_tags cultural_tags].each do |field|
           value = result[field]
           raise InvalidResultError, "Analysis result contains an invalid array" unless value.is_a?(Array) && value.all? { |item| item.is_a?(String) }
         end

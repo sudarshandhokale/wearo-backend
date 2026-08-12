@@ -21,4 +21,13 @@ RSpec.describe Stylist::ExtractContext do
   it "rejects an empty prompt" do
     expect { described_class.call(" ", timezone: "UTC") }.to raise_error(Stylist::InvalidPromptError)
   end
+
+
+  it "extracts Indian wedding and festival occasions" do
+    wedding = described_class.call("Sangeet outfit for Saturday", timezone: "Asia/Kolkata")
+    festival = described_class.call("What should I wear for Diwali?", timezone: "Asia/Kolkata")
+
+    expect(wedding.attributes).to include("occasion" => "wedding", "formality" => "formal")
+    expect(festival.attributes).to include("occasion" => "festival")
+  end
 end

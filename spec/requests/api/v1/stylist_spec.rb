@@ -44,6 +44,85 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       expect(response_item_ids).not_to include(other_item.id)
     end
 
+    it "recommends a one-piece outfit without requiring shoes" do
+      dress = create(
+        :clothing_item,
+        user: user,
+        wardrobe: user.wardrobe,
+        category: "one_piece",
+        subcategory: "dress",
+        primary_color: "navy",
+        status: "ready"
+      )
+
+      post "/api/v1/stylist/recommendations", params: {
+        prompt: "Dinner with friends tonight"
+      }, headers: auth_headers(user)
+
+      body = response.parsed_body.dig("data")
+      expect(response).to have_http_status(:created)
+      expect(body.dig("outfits", 0, "items").pluck("role")).to eq([ "one_piece" ])
+      expect(body.dig("outfits", 0, "items", 0, "clothing_item_id")).to eq(dress.id)
+      expect(body.fetch("suggestions")).to include(
+        hash_including("key" => "add_shoes", "role" => "shoes"),
+        hash_including("key" => "add_accessory", "role" => "accessory")
+      )
+    end
+
+
+    it "recommends a complete set without requiring separates" do
+      matching_set = create(
+        :clothing_item,
+        user: user,
+        wardrobe: user.wardrobe,
+        category: "set",
+        subcategory: "co_ord",
+        primary_color: "green",
+        status: "ready"
+      )
+
+      post "/api/v1/stylist/recommendations", params: {
+        prompt: "Casual lunch with friends"
+      }, headers: auth_headers(user)
+
+      body = response.parsed_body.dig("data")
+      expect(response).to have_http_status(:created)
+      expect(body.dig("outfits", 0, "items").pluck("role")).to eq([ "set" ])
+      expect(body.dig("outfits", 0, "items", 0, "clothing_item_id")).to eq(matching_set.id)
+    end
+
+
+    it "recommends an individual saree with an ethnic blouse" do
+      saree = create(
+        :clothing_item,
+        user: user,
+        wardrobe: user.wardrobe,
+        category: "drape",
+        subcategory: "saree",
+        primary_color: "red",
+        status: "ready"
+      )
+      blouse = create(
+        :clothing_item,
+        user: user,
+        wardrobe: user.wardrobe,
+        category: "top",
+        subcategory: "ethnic_blouse",
+        primary_color: "gold",
+        status: "ready"
+      )
+
+      post "/api/v1/stylist/recommendations", params: {
+        prompt: "Saree outfit for a wedding reception"
+      }, headers: auth_headers(user)
+
+      body = response.parsed_body.dig("data")
+      expect(response).to have_http_status(:created)
+      expect(body.dig("context", "occasion")).to eq("wedding")
+      expect(body.dig("outfits", 0, "items").pluck("role")).to eq(%w[drape top])
+      expect(body.dig("outfits", 0, "items").pluck("clothing_item_id")).to contain_exactly(saree.id, blouse.id)
+    end
+
     it "returns localized details when required wardrobe roles are missing" do
       create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "top", subcategory: "polo", status: "ready")
 
@@ -51,7 +130,8 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("stylist.insufficient_wardrobe"))
-      expect(response.parsed_body.dig("error", "details", "missing_roles")).to contain_exactly("bottom", "shoes")
+      expect(response.parsed_body.dig("error", "details", "missing_roles")).to contain_exactly("bottom", "one_piece", "drape", "set")
+      expect(response.parsed_body.dig("error", "details", "required_combinations")).to eq([ %w[top bottom], %w[one_piece], %w[drape top], %w[set] ])
     end
 
     it "rejects a blank prompt with a localized message" do

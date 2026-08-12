@@ -20,6 +20,7 @@ class ClothingItem < ApplicationRecord
   validates :image, content_type: %w[image/png image/jpeg image/webp], size: { less_than_or_equal_to: 10.megabytes }
   validate :wardrobe_belongs_to_user
   validate :image_is_unique_for_user
+  validate :cultural_tags_are_an_array
 
   before_validation :set_image_checksum
 
@@ -56,6 +57,10 @@ class ClothingItem < ApplicationRecord
       .where.not(id: id)
       .exists?
     errors.add(:image, :taken) if duplicate_exists
+  end
+
+  def cultural_tags_are_an_array
+    errors.add(:cultural_tags, :invalid) unless cultural_tags.is_a?(Array)
   end
 
   def wardrobe_belongs_to_user

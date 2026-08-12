@@ -20,5 +20,9 @@ en:
   stylist:
     fallback_explanation: "This outfit is a strong match for %{occasion} based on your wardrobe and style preferences."
     general_occasion: "your plans"
-    insufficient_wardrobe: "Add at least one ready top, bottom, and pair of shoes to receive recommendations"
+    insufficient_wardrobe: "Add a ready one-piece garment, complete set, top and bottom, or drape and top to receive recommendations"
     invalid_prompt: "Describe where you are going or what you are dressing for"
+    suggestions:
+      add_accessory: "Add accessories to receive more varied outfit suggestions"
+      add_outerwear: "Add outerwear to complete more cool-weather and formal outfits"
+      add_shoes: "Add shoes to receive more complete outfit suggestions"

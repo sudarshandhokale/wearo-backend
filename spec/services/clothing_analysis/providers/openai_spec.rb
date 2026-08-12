@@ -15,6 +15,7 @@ RSpec.describe ClothingAnalysis::Providers::Openai do
   let(:analysis_result) do
     {
       name: "Navy T-shirt",
+      garment_type: "T-shirt",
       category: "top",
       subcategory: "t_shirt",
       primary_color: "navy",
@@ -24,6 +25,7 @@ RSpec.describe ClothingAnalysis::Providers::Openai do
       season_tags: [ "summer" ],
       occasion_tags: [ "casual" ],
       style_tags: [ "minimal" ],
+      cultural_tags: [],
       formality_score: 2,
       confidence: 0.95
     }

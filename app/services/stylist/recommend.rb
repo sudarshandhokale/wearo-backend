@@ -4,6 +4,7 @@ module Stylist
       def call(user:, prompt:)
         extracted_context = ExtractContext.call(prompt, timezone: user.timezone)
         candidates = CandidateSelector.call(user: user, context: extracted_context.attributes)
+        suggestions = WardrobeSuggestions.call(candidates: candidates, context: extracted_context.attributes)
         combinations = CombinationBuilder.call(candidates: candidates, context: extracted_context.attributes)
         scored_combinations = combinations.map do |combination|
           CompatibilityScorer.call(
@@ -25,7 +26,7 @@ module Stylist
           ranked_combinations: ranked_combinations
         )
 
-        RecommendationResult.new(context: extracted_context.attributes, outfits: outfits)
+        RecommendationResult.new(context: extracted_context.attributes, outfits: outfits, suggestions: suggestions)
       end
 
       private

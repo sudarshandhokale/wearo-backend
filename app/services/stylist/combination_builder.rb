@@ -4,13 +4,12 @@ module Stylist
 
     class << self
       def call(candidates:, context:)
-        core_combinations = candidates.fetch("top").product(
-          candidates.fetch("bottom"),
-          candidates.fetch("shoes")
-        ).first(MAX_COMBINATIONS)
+        base_combinations = OutfitTaxonomy.base_combinations.flat_map do |roles|
+          combinations_for_roles(candidates, roles)
+        end
 
-        core_combinations.each_with_index.map do |(top, bottom, shoes), index|
-          items = { "top" => top, "bottom" => bottom, "shoes" => shoes }
+        base_combinations.first(MAX_COMBINATIONS).each_with_index.map do |items, index|
+          add_optional_item(items, "shoes", candidates, index)
           add_optional_item(items, "outerwear", candidates, index) if outerwear_relevant?(context)
           add_optional_item(items, "accessory", candidates, index)
           Combination.new(items: items)
@@ -18,6 +17,14 @@ module Stylist
       end
 
       private
+
+      def combinations_for_roles(candidates, roles)
+        roles.reduce([ {} ]) do |combinations, role|
+          combinations.product(candidates.fetch(role)).map do |combination, clothing_item|
+            combination.merge(role => clothing_item)
+          end.first(MAX_COMBINATIONS)
+        end
+      end
 
       def add_optional_item(items, role, candidates, index)
         available_items = candidates.fetch(role, [])

@@ -8,6 +8,7 @@ RSpec.describe ClothingAnalysis::Analyze do
     allow(provider).to receive(:call).and_return(
       result: {
         name: "Navy tee",
+        garment_type: "T-shirt",
         category: "top",
         subcategory: "tee",
         primary_color: "dark blue",
@@ -17,6 +18,7 @@ RSpec.describe ClothingAnalysis::Analyze do
         season_tags: [ "summer" ],
         occasion_tags: [ "casual" ],
         style_tags: [ "minimal" ],
+        cultural_tags: [],
         formality_score: 2,
         confidence: 0.88
       },
@@ -33,6 +35,7 @@ RSpec.describe ClothingAnalysis::Analyze do
     allow(provider).to receive(:call).and_return(
       result: {
         name: nil,
+        garment_type: "Boots",
         category: "top",
         subcategory: "boots",
         primary_color: nil,
@@ -42,6 +45,7 @@ RSpec.describe ClothingAnalysis::Analyze do
         season_tags: [],
         occasion_tags: [],
         style_tags: [],
+        cultural_tags: [],
         formality_score: nil,
         confidence: nil
       },

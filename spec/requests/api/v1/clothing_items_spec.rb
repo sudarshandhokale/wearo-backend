@@ -37,14 +37,16 @@ RSpec.describe "API v1 clothing items", type: :request do
         post "/api/v1/clothing_items", params: {
           clothing_item: {
             image: uploaded_png,
-            name: "White sneakers",
+            name: "White jutti",
+            garment_type: "Jutti",
             category: "shoes",
-            subcategory: "sneakers",
+            subcategory: "jutti",
             primary_color: "white",
             secondary_colors: [ "gray" ],
             season_tags: [ "summer" ],
             occasion_tags: [ "casual" ],
             style_tags: [ "minimal" ],
+            cultural_tags: [ "Indian Traditional" ],
             formality_score: 3
           }
         }, headers: auth_headers(user)
@@ -54,6 +56,9 @@ RSpec.describe "API v1 clothing items", type: :request do
       expect(response).to have_http_status(:created)
       expect(item).to be_processing
       expect(item.image).to be_attached
+      expect(item.garment_type).to eq("Jutti")
+      expect(item.cultural_tags).to eq([ "Indian Traditional" ])
+      expect(response.parsed_body.dig("data", "garment_type")).to eq("Jutti")
       expect(response.parsed_body.dig("data", "image", "signed_id")).to be_present
     end
 
@@ -144,9 +149,11 @@ RSpec.describe "API v1 clothing items", type: :request do
       patch "/api/v1/clothing_items/#{item.id}", params: {
         clothing_item: {
           name: "Navy textured polo",
+          garment_type: "Polo shirt",
           category: "top",
           subcategory: "polo",
           primary_color: "navy",
+          cultural_tags: [ "western" ],
           formality_score: 4
         }
       }, headers: auth_headers(user)
@@ -154,6 +161,8 @@ RSpec.describe "API v1 clothing items", type: :request do
       expect(response).to have_http_status(:ok)
       expect(item.reload.name).to eq("Navy textured polo")
       expect(item.primary_color).to eq("navy")
+      expect(item.garment_type).to eq("Polo shirt")
+      expect(item.cultural_tags).to eq([ "western" ])
     end
 
     it "schedules analysis when the image is replaced" do

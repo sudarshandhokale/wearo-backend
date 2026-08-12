@@ -6,8 +6,21 @@ class ClothingTaxonomy
         t_shirt: "T-shirt",
         polo: "Polo",
         shirt: "Shirt",
+        blouse: "Blouse",
+        tank_top: "Tank Top",
+        crop_top: "Crop Top",
+        camisole: "Camisole",
+        bodysuit: "Bodysuit",
+        tunic: "Tunic",
+        kurta: "Kurta",
+        kurti: "Kurti",
+        choli: "Choli",
+        ethnic_blouse: "Ethnic Blouse",
+        sherwani: "Sherwani",
+        dashiki: "Dashiki",
         sweater: "Sweater",
-        hoodie: "Hoodie"
+        hoodie: "Hoodie",
+        other: "Other Top"
       }
     },
     bottom: {
@@ -15,15 +28,88 @@ class ClothingTaxonomy
       subcategories: {
         jeans: "Jeans",
         trousers: "Trousers",
+        wide_leg_trousers: "Wide-Leg Trousers",
         chinos: "Chinos",
-        shorts: "Shorts"
+        shorts: "Shorts",
+        skirt: "Skirt",
+        leggings: "Leggings",
+        joggers: "Joggers",
+        cargo_pants: "Cargo Pants",
+        salwar: "Salwar",
+        churidar: "Churidar",
+        pajama: "Pajama",
+        dhoti: "Dhoti",
+        palazzo: "Palazzo",
+        lehenga_skirt: "Lehenga Skirt",
+        kilt: "Kilt",
+        other: "Other Bottom"
+      }
+    },
+    one_piece: {
+      label: "One Piece",
+      subcategories: {
+        dress: "Dress",
+        midi_dress: "Midi Dress",
+        maxi_dress: "Maxi Dress",
+        gown: "Gown",
+        jumpsuit: "Jumpsuit",
+        romper: "Romper",
+        overall: "Overall",
+        swimsuit: "Swimsuit",
+        abaya: "Abaya",
+        kaftan: "Kaftan",
+        thobe: "Thobe",
+        kimono: "Kimono",
+        other: "Other One Piece"
+      }
+    },
+    drape: {
+      label: "Drape",
+      subcategories: {
+        saree: "Saree",
+        half_saree: "Half Saree",
+        dhoti_drape: "Dhoti Drape",
+        sarong: "Sarong",
+        wrapper: "Wrapper",
+        other: "Other Drape"
+      }
+    },
+    set: {
+      label: "Set",
+      subcategories: {
+        matching_set: "Matching Set",
+        co_ord: "Co-ord",
+        suit: "Suit",
+        activewear_set: "Activewear Set",
+        sleepwear_set: "Sleepwear Set",
+        bikini_set: "Bikini Set",
+        traditional_set: "Traditional Set",
+        saree_set: "Saree Set",
+        lehenga_set: "Lehenga Set",
+        salwar_suit: "Salwar Suit",
+        kurta_set: "Kurta Set",
+        sherwani_set: "Sherwani Set",
+        anarkali_set: "Anarkali Set",
+        hanbok_set: "Hanbok Set",
+        hanfu_set: "Hanfu Set",
+        agbada_set: "Agbada Set",
+        kebaya_set: "Kebaya Set",
+        other: "Other Set"
       }
     },
     outerwear: {
       label: "Outerwear",
       subcategories: {
         jacket: "Jacket",
-        coat: "Coat"
+        coat: "Coat",
+        blazer: "Blazer",
+        cardigan: "Cardigan",
+        vest: "Vest",
+        trench_coat: "Trench Coat",
+        raincoat: "Raincoat",
+        poncho: "Poncho",
+        cloak: "Cloak",
+        other: "Other Outerwear"
       }
     },
     shoes: {
@@ -32,7 +118,16 @@ class ClothingTaxonomy
         sneakers: "Sneakers",
         boots: "Boots",
         loafers: "Loafers",
-        sandals: "Sandals"
+        sandals: "Sandals",
+        heels: "Heels",
+        pumps: "Pumps",
+        flats: "Flats",
+        mules: "Mules",
+        wedges: "Wedges",
+        jutti: "Jutti",
+        mojari: "Mojari",
+        kolhapuri: "Kolhapuri",
+        other: "Other Shoes"
       }
     },
     accessory: {
@@ -41,8 +136,18 @@ class ClothingTaxonomy
         belt: "Belt",
         watch: "Watch",
         bag: "Bag",
+        clutch: "Clutch",
+        tote: "Tote",
         hat: "Hat",
-        scarf: "Scarf"
+        scarf: "Scarf",
+        dupatta: "Dupatta",
+        stole: "Stole",
+        turban: "Turban",
+        sunglasses: "Sunglasses",
+        jewelry: "Jewelry",
+        bangles: "Bangles",
+        bindi: "Bindi",
+        other: "Other Accessory"
       }
     }
   }.freeze

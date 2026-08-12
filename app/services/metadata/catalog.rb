@@ -10,7 +10,11 @@ module Metadata
         business_casual: "Business Casual",
         bohemian: "Bohemian",
         edgy: "Edgy",
-        preppy: "Preppy"
+        preppy: "Preppy",
+        traditional_indian: "Traditional Indian",
+        ethnic: "Ethnic",
+        indo_western: "Indo-Western",
+        festive: "Festive"
       },
       preferred_colors: {
         black: "Black",
@@ -73,6 +77,10 @@ module Metadata
         dinner: "Dinner",
         date_night: "Date Night",
         party: "Party",
+        wedding: "Wedding",
+        festival: "Festival",
+        religious_ceremony: "Religious Ceremony",
+        family_function: "Family Function",
         travel: "Travel",
         workout: "Workout",
         outdoor: "Outdoor"
@@ -96,6 +104,7 @@ module Metadata
         },
         outfits: {
           roles: OutfitTaxonomy.roles_for_metadata,
+          base_compositions: OutfitTaxonomy.base_compositions_for_metadata,
           statuses: OutfitTaxonomy.statuses_for_metadata
         }
       }

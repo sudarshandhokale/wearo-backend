@@ -10,7 +10,10 @@ module Api
         error_response(
           error: {
             message: I18n.t("stylist.insufficient_wardrobe"),
-            details: { missing_roles: error.missing_roles }
+            details: {
+              missing_roles: error.missing_roles,
+              required_combinations: error.required_combinations
+            }
           },
           status: :unprocessable_entity
         )

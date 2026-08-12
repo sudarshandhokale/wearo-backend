@@ -3,6 +3,7 @@ FactoryBot.define do
     user
     wardrobe { user.wardrobe }
     name { "Navy polo" }
+    garment_type { "polo" }
     category { "top" }
     subcategory { "polo" }
     primary_color { "navy" }
@@ -12,6 +13,7 @@ FactoryBot.define do
     season_tags { [ "summer" ] }
     occasion_tags { [ "casual" ] }
     style_tags { [ "classic" ] }
+    cultural_tags { [] }
     formality_score { 4 }
     status { "ready" }
   end

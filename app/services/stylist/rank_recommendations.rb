@@ -28,11 +28,13 @@ module Stylist
               {
                 role: role,
                 clothing_item_id: item.id,
+                garment_type: item.garment_type,
                 category: item.category,
                 subcategory: item.subcategory,
                 primary_color: item.primary_color,
                 occasion_tags: item.occasion_tags,
                 style_tags: item.style_tags,
+                cultural_tags: item.cultural_tags,
                 formality_score: item.formality_score
               }
             end
