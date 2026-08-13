@@ -36,6 +36,12 @@ Rails.application.routes.draw do
       end
       resources :wear_history, only: :index, controller: :wear_histories
       resources :styling_plans, only: %i[index show create]
+      resources :styling_routines do
+        post :drafts, on: :collection
+      end
+      resources :routine_occurrences, only: :index do
+        get :today, on: :collection
+      end
     end
   end
 

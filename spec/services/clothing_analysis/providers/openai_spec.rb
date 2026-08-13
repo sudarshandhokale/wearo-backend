@@ -39,6 +39,7 @@ RSpec.describe ClothingAnalysis::Providers::Openai do
 
       http_request.headers["Authorization"] == "Bearer test-key" &&
         body.dig("text", "format", "strict") == true &&
+        body.dig("input", 0, "content", 0, "text").include?("meaningful catalog title") &&
         image_input["type"] == "input_image" &&
         image_input["image_url"].start_with?("data:image/png;base64,")
     end.to_return(

@@ -15,6 +15,7 @@ module ClothingAnalysis
       occasion_tags
       style_tags
       cultural_tags
+      usage_tags
       formality_score
     ].freeze
     FIELDS = (PERSISTED_FIELDS + [ "confidence" ]).freeze
@@ -37,6 +38,7 @@ module ClothingAnalysis
         occasion_tags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
         style_tags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
         cultural_tags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 50, pattern: TOKEN_PATTERN } },
+        usage_tags: { type: "array", maxItems: 8, items: { type: "string", enum: ClothingUsageTaxonomy.keys } },
         formality_score: { type: [ "integer", "null" ], minimum: 1, maximum: 10 },
         confidence: { type: [ "number", "null" ], minimum: 0, maximum: 1 }
       }
@@ -52,6 +54,7 @@ module ClothingAnalysis
         validate_arrays!(result)
         validate_guardrails!(result)
         validate_taxonomy!(result)
+        validate_usage_tags!(result["usage_tags"])
         validate_formality!(result["formality_score"])
         validate_confidence!(result["confidence"])
 
@@ -61,7 +64,7 @@ module ClothingAnalysis
       private
 
       def validate_arrays!(result)
-        %w[secondary_colors season_tags occasion_tags style_tags cultural_tags].each do |field|
+        %w[secondary_colors season_tags occasion_tags style_tags cultural_tags usage_tags].each do |field|
           value = result[field]
           raise InvalidResultError, "Analysis result contains an invalid array" unless value.is_a?(Array) && value.all? { |item| item.is_a?(String) }
         end
@@ -75,7 +78,7 @@ module ClothingAnalysis
         end
         Ai::Guardrails.token_list!(result["secondary_colors"], max_items: 8)
         Ai::Guardrails.token_list!(result["season_tags"], max_items: 8)
-        %w[occasion_tags style_tags cultural_tags].each do |field|
+        %w[occasion_tags style_tags cultural_tags usage_tags].each do |field|
           Ai::Guardrails.token_list!(result[field])
         end
       rescue Ai::GuardrailViolationError
@@ -99,6 +102,12 @@ module ClothingAnalysis
         return if value.nil? || (value.is_a?(Integer) && value.between?(1, 10))
 
         raise InvalidResultError, "Analysis result contains an invalid formality score"
+      end
+
+      def validate_usage_tags!(value)
+        return if value.difference(ClothingUsageTaxonomy.keys).empty?
+
+        raise InvalidResultError, "Analysis result contains an invalid usage context"
       end
 
       def validate_confidence!(value)

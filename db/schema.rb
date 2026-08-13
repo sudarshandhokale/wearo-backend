@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_12_180200) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_13_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -91,6 +91,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_180200) do
     t.string "garment_type"
     t.jsonb "cultural_tags", default: [], null: false
     t.string "fit"
+    t.jsonb "usage_tags", default: [], null: false
+    t.jsonb "user_usage_tags"
     t.index ["discarded_at"], name: "index_clothing_items_on_discarded_at"
     t.index ["user_id", "category"], name: "index_clothing_items_on_user_id_and_category"
     t.index ["user_id", "fit"], name: "index_clothing_items_on_user_id_and_fit"
@@ -205,6 +207,27 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_180200) do
     t.index ["user_id"], name: "index_recommendation_requests_on_user_id"
   end
 
+  create_table "routine_occurrences", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "styling_routine_id", null: false
+    t.bigint "outfit_id"
+    t.datetime "scheduled_for", null: false
+    t.string "status", default: "scheduled", null: false
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "weather_context", default: {}, null: false
+    t.jsonb "suggestions", default: [], null: false
+    t.string "failure_code"
+    t.datetime "generated_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["outfit_id"], name: "index_routine_occurrences_on_outfit_id"
+    t.index ["status", "scheduled_for"], name: "index_routine_occurrences_on_status_and_scheduled_for"
+    t.index ["styling_routine_id", "scheduled_for"], name: "index_routine_occurrences_on_routine_and_schedule", unique: true
+    t.index ["styling_routine_id"], name: "index_routine_occurrences_on_styling_routine_id"
+    t.index ["user_id", "scheduled_for"], name: "index_routine_occurrences_on_user_id_and_scheduled_for"
+    t.index ["user_id"], name: "index_routine_occurrences_on_user_id"
+  end
+
   create_table "style_profiles", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.jsonb "preferred_styles", default: [], null: false
@@ -251,6 +274,27 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_180200) do
     t.index ["user_id", "start_date"], name: "index_styling_plans_on_user_id_and_start_date"
     t.index ["user_id", "status"], name: "index_styling_plans_on_user_id_and_status"
     t.index ["user_id"], name: "index_styling_plans_on_user_id"
+  end
+
+  create_table "styling_routines", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.string "routine_type", null: false
+    t.jsonb "days_of_week", default: [], null: false
+    t.time "local_time", null: false
+    t.string "usage", null: false
+    t.string "occasion"
+    t.string "activity"
+    t.string "city_mode", default: "profile", null: false
+    t.string "city"
+    t.string "outfit_strategy", default: "separate", null: false
+    t.integer "recommendation_lead_minutes", default: 60, null: false
+    t.boolean "reminder_enabled", default: false, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "active"], name: "index_styling_routines_on_user_id_and_active"
+    t.index ["user_id"], name: "index_styling_routines_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -317,10 +361,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_180200) do
   add_foreign_key "outfits", "recommendation_requests"
   add_foreign_key "outfits", "users"
   add_foreign_key "recommendation_requests", "users"
+  add_foreign_key "routine_occurrences", "outfits"
+  add_foreign_key "routine_occurrences", "styling_routines"
+  add_foreign_key "routine_occurrences", "users"
   add_foreign_key "style_profiles", "users"
   add_foreign_key "styling_plan_entries", "outfits"
   add_foreign_key "styling_plan_entries", "styling_plans"
   add_foreign_key "styling_plans", "users"
+  add_foreign_key "styling_routines", "users"
   add_foreign_key "wardrobes", "users"
   add_foreign_key "wear_histories", "outfits"
   add_foreign_key "wear_histories", "users"

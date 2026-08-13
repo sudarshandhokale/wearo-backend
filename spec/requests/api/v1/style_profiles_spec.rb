@@ -42,6 +42,10 @@ RSpec.describe "API v1 style profile", type: :request do
       expect(profile.preferred_colors).to eq([ "navy", "white" ])
       expect(profile.fit_preferences).to eq("tops" => "regular", "bottoms" => "straight")
       expect(profile.onboarding_completed).to be(true)
+      expect(response.parsed_body.dig("data", "fit_preference_labels")).to eq(
+        "tops" => "Regular",
+        "bottoms" => "Straight"
+      )
     end
   end
 end

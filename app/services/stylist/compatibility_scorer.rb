@@ -69,10 +69,14 @@ module Stylist
 
         target = FORMALITY_TARGETS[context["formality"]]
         formality_values = items.filter_map(&:formality_score)
-        return tag_score if target.blank? || formality_values.empty?
+        return average([ tag_score, usage_score(items, context) ]) if target.blank? || formality_values.empty?
 
         formality_score = [ 100.0 - ((average(formality_values) - target).abs * 15), 0.0 ].max
-        average([ tag_score, formality_score ])
+        average([ tag_score, formality_score, usage_score(items, context) ])
+      end
+
+      def usage_score(items, context)
+        average(items.map { |item| ClothingUsageTaxonomy.score(item.effective_usage_tags, context) })
       end
 
       def weather_score(items, context)

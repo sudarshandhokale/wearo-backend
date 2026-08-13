@@ -70,10 +70,10 @@ module ClothingAnalysis
       def call(result)
         source = result.to_h.deep_stringify_keys
         category, subcategory = normalize_taxonomy(source)
-
-        {
-          "name" => normalize_name(source["name"]),
-          "garment_type" => normalize_name(source["garment_type"]) || normalize_name(source["subcategory"]),
+        proposed_name = normalize_name(source["name"])
+        validate_proposed_name!(proposed_name)
+        attributes = {
+          "garment_type" => normalize_name(source["garment_type"]) || ClothingTaxonomy.subcategory_label(category, safe_subcategory(category, subcategory)),
           "category" => category,
           "subcategory" => safe_subcategory(category, subcategory),
           "primary_color" => normalize_color(source["primary_color"]),
@@ -85,9 +85,11 @@ module ClothingAnalysis
           "occasion_tags" => normalize_list(source["occasion_tags"]),
           "style_tags" => normalize_list(source["style_tags"]),
           "cultural_tags" => normalize_list(source["cultural_tags"]),
+          "usage_tags" => normalize_usage_tags(source["usage_tags"]),
           "formality_score" => normalize_integer(source["formality_score"]),
           "confidence" => normalize_number(source["confidence"])
         }
+        { "name" => NameBuilder.call(proposed_name: proposed_name, attributes: attributes) }.merge(attributes)
       rescue NoMethodError, TypeError
         raise InvalidResultError, "Analysis result must be an object"
       end
@@ -132,6 +134,12 @@ module ClothingAnalysis
         value.to_s.strip.presence
       end
 
+      def validate_proposed_name!(value)
+        Ai::Guardrails.model_text!(value, max_length: 120, allow_nil: true)
+      rescue Ai::GuardrailViolationError
+        raise InvalidResultError, "Analysis result failed guardrail validation"
+      end
+
       def normalize_color(value)
         token = normalize_token(value)
         COLOR_ALIASES.fetch(token, token)
@@ -139,6 +147,10 @@ module ClothingAnalysis
 
       def normalize_list(value, normalizer = method(:normalize_token))
         Array(value).filter_map { |item| normalizer.call(item) }.uniq
+      end
+
+      def normalize_usage_tags(value)
+        normalize_list(value).intersection(ClothingUsageTaxonomy.keys)
       end
 
       def normalize_token(value)

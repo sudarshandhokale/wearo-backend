@@ -15,6 +15,9 @@ module Accounts
           outfit_feedback: records(user.outfit_feedbacks.order(:created_at)),
           recommendation_requests: recommendation_requests(user),
           styling_plans: styling_plans(user),
+          styling_routines: user.styling_routines.order(:created_at).map { |routine| StylingRoutine::ViewSerializer.new(routine).serializable_hash },
+          routine_occurrences: user.routine_occurrences.includes(:styling_routine, outfit: Outfit.cover_media_includes).order(:scheduled_for)
+                                   .map { |occurrence| RoutineOccurrence::ViewSerializer.new(occurrence).serializable_hash },
           ai_requests: ai_requests(user)
         }
       end

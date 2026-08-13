@@ -13,10 +13,21 @@ RSpec.describe Stylist::ExtractContext do
     expect(result.attributes).to include(
       "occasion" => "dinner",
       "formality" => "smart_casual",
-      "activity" => "social"
+      "activity" => "social",
+      "usage" => "social"
     )
     expect(result.recommended_for.hour).to eq(19)
     expect(result.city).to be_nil
+  end
+
+  it "distinguishes walking, travel, and special-occasion usage" do
+    walking = described_class.call("Comfortable clothes for walking", timezone: "UTC")
+    travel = described_class.call("Packing for a vacation", timezone: "UTC")
+    special = described_class.call("Black tie wedding", timezone: "UTC")
+
+    expect(walking.attributes["usage"]).to eq("walking")
+    expect(travel.attributes["usage"]).to eq("travel")
+    expect(special.attributes["usage"]).to eq("special_occasion")
   end
 
   it "rejects an empty prompt" do

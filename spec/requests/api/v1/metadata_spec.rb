@@ -49,6 +49,10 @@ RSpec.describe "API v1 metadata", type: :request do
         "key" => "ready",
         "label" => "Ready"
       )
+      expect(body.dig("data", "clothing_items", "usage_contexts")).to include(
+        "key" => "walking",
+        "label" => "Walking"
+      )
       expect(body.dig("data", "outfits", "roles")).to include(
         "key" => "shoes",
         "label" => "Shoes"

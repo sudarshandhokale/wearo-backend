@@ -67,6 +67,27 @@ RSpec.describe "API v1 outfit visualizations", type: :request do
     expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("visualizations.daily_limit_reached"))
   end
 
+  it "returns a localized usage-limit failure that the client can act on" do
+    visualization = create(
+      :outfit_visualization,
+      user: user,
+      outfit: outfit,
+      status: "failed",
+      failure_code: "ai_usage_limit_reached",
+      completed_at: Time.current
+    )
+
+    get "/api/v1/outfits/#{outfit.id}/visualizations/#{visualization.id}", headers: auth_headers(user)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.fetch("data")).to include(
+      "status" => "failed",
+      "failure_code" => "ai_usage_limit_reached",
+      "failure_message" => I18n.t("visualizations.failures.ai_usage_limit_reached")
+    )
+    expect(response.parsed_body.dig("data", "retry_after")).to be_present
+  end
+
   it "falls back to flat-lay and asks for a photo when try-on has no person reference" do
     post "/api/v1/outfits/#{outfit.id}/visualizations", params: {
       visualization: { mode: "try_on" }

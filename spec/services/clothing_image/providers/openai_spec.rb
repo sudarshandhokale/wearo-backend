@@ -29,10 +29,28 @@ RSpec.describe ClothingImage::Providers::Openai do
       }.to_json
     )
 
-    result = provider.call(image: item.image)
+    result = provider.call(image: item.image, category: "top", subcategory: "t_shirt")
 
     expect(request).to have_been_requested.once
     expect(result.fetch(:image)).to eq(UploadHelper::PNG_BYTES)
     expect(result.fetch(:metadata)).to include("model" => "gpt-image-test", "response_id" => "img_polish_1")
+  end
+
+  it "instructs the model to preserve complete footwear pairs" do
+    request = stub_request(:post, endpoint).with do |http_request|
+      http_request.body.include?("category is shoes") &&
+        http_request.body.include?("Never reduce a visible pair of shoes to one shoe") &&
+        http_request.body.include?("do not invent a missing matching piece")
+    end.to_return(
+      status: 200,
+      headers: { "Content-Type" => "application/json" },
+      body: {
+        data: [ { b64_json: Base64.strict_encode64(UploadHelper::PNG_BYTES) } ]
+      }.to_json
+    )
+
+    provider.call(image: item.image, category: "shoes", subcategory: "sneakers")
+
+    expect(request).to have_been_requested.once
   end
 end

@@ -10,7 +10,11 @@ module ClothingImage
           trackable: clothing_item,
           reserved_tokens: RESERVED_TOKENS
         )
-        result = provider.call(image: clothing_item.image)
+        result = provider.call(
+          image: clothing_item.image,
+          category: clothing_item.category,
+          subcategory: clothing_item.subcategory
+        )
         metadata = result.fetch(:metadata).stringify_keys
 
         clothing_item.polished_image.attach(

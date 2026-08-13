@@ -107,7 +107,11 @@ module ClothingAnalysis
           Use one universal category from the supplied taxonomy. Preserve the garment's culturally specific local name in garment_type.
           If no listed subtype fits, use the category's other subtype instead of changing the universal category.
           Choose fit only from: #{ClothingTaxonomy.fit_keys.to_json}.
-          Use concise lowercase values for colors, pattern, material, seasons, occasions, style tags, and open cultural tags.
+          Infer likely usage contexts only from: #{ClothingUsageTaxonomy.keys.to_json}. Use an empty usage_tags array when visual evidence is insufficient.
+          Usage tags are suggestions only and may be overridden by the user. Use concise lowercase values for colors, pattern, material, seasons, occasions, style tags, and open cultural tags.
+          The name must be a concise, meaningful catalog title, not only a generic garment word such as Shirt, Jeans, Shoes, or Dress.
+          Build the name from visible evidence using the primary color plus a distinguishing material, pattern, construction, or style when identifiable, followed by the specific garment type; examples include Blue Denim Jeans and Black Striped T-shirt.
+          Do not add a descriptor to the name unless it is supported by the image.
           Set uncertain nullable fields to null and provide confidence from 0 to 1.
         PROMPT
       end

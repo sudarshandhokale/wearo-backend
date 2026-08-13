@@ -4,7 +4,9 @@ class RecommendationRequest::ViewSerializer < ApplicationSerializer
              :context,
              :wardrobe_suggestions,
              :status,
+             :status_label,
              :ranking_source,
+             :ranking_source_label,
              :provider,
              :model,
              :ai_usage,
@@ -14,6 +16,17 @@ class RecommendationRequest::ViewSerializer < ApplicationSerializer
              :outfits,
              :created_at,
              :updated_at
+
+  labeled_attributes :status, scope: :recommendation_status
+  labeled_attributes :ranking_source
+
+  def context
+    labeled_context(object.context)
+  end
+
+  def wardrobe_suggestions
+    object.wardrobe_suggestions.map { |suggestion| Metadata::Labels.suggestion(suggestion) }
+  end
 
   def ai_usage
     {

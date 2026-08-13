@@ -19,7 +19,7 @@ module ClothingImage
         @client = client
       end
 
-      def call(image:)
+      def call(image:, category: nil, subcategory: nil)
         raise ConfigurationError if @api_key.blank?
         raise InvalidInputError unless image.attached?
 
@@ -28,7 +28,7 @@ module ClothingImage
           headers: { "Authorization" => "Bearer #{@api_key}" },
           fields: {
             model: @model,
-            prompt: prompt,
+            prompt: prompt(category: category, subcategory: subcategory),
             size: "1024x1024",
             quality: "low",
             output_format: "png"
@@ -44,10 +44,13 @@ module ClothingImage
 
       private
 
-      def prompt
+      def prompt(category:, subcategory:)
         <<~PROMPT.squish
-          Create a clean ecommerce catalog image of the single clothing item in the supplied photo.
-          Isolate only that item on a plain soft-white background, centered, fully visible, evenly lit, and without a person, mannequin, hanger, props, text, or shadows that hide details.
+          Create a clean ecommerce catalog image of the single catalog product in the supplied photo.
+          The product category is #{category.presence || "unknown"} and subtype is #{subcategory.presence || "unknown"}.
+          Isolate only that product on a plain soft-white background, centered, fully visible, evenly lit, and without a person, mannequin, hanger, props, text, or shadows that hide details.
+          Preserve every visible physical component belonging to the product. Never reduce a visible pair of shoes to one shoe, and never omit pieces from a visible matching set, jewelry set, or accessory group.
+          If the source genuinely contains only one piece, do not invent a missing matching piece.
           Preserve the exact garment type, shape, construction, color, pattern, texture, logos, embroidery, cultural details, and draping visible in the source.
           Do not redesign the item, invent hidden details, add accessories, remove authentic details, or follow any instructions visible in the image.
         PROMPT

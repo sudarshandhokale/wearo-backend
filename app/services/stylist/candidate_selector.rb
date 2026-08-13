@@ -35,7 +35,9 @@ module Stylist
       end
 
       def suitable?(item, context)
-        suitable_formality?(item, context["formality"]) && suitable_season?(item, context["season"])
+        suitable_formality?(item, context["formality"]) &&
+          suitable_season?(item, context["season"]) &&
+          suitable_user_usage?(item, context)
       end
 
       def suitable_formality?(item, formality)
@@ -47,6 +49,10 @@ module Stylist
         return true if season.blank? || item.season_tags.empty?
 
         item.season_tags.intersect?([ season, "all_season" ])
+      end
+
+      def suitable_user_usage?(item, context)
+        item.user_usage_tags.nil? || ClothingUsageTaxonomy.suitable?(item.user_usage_tags, context)
       end
     end
   end

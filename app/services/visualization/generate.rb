@@ -33,13 +33,21 @@ module Visualization
         Ai::UsageTracker.fail!(ai_request, error)
         visualization.update_columns(
           status: "failed",
-          failure_code: error.class.name.demodulize.underscore,
+          failure_code: failure_code(error),
           completed_at: Time.current,
           updated_at: Time.current
         ) if visualization.persisted?
         raise
       ensure
         visualization.reference_image.purge_later if visualization.persisted? && visualization.reference_image.attached?
+      end
+
+      private
+
+      def failure_code(error)
+        return "ai_usage_limit_reached" if error.is_a?(Ai::UsageLimitExceededError)
+
+        "generation_failed"
       end
     end
   end

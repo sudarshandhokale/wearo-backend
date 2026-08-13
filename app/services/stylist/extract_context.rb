@@ -23,6 +23,7 @@ module Stylist
       "professional" => /\b(work|office|business|meeting|interview)\b/i,
       "social" => /\b(dinner|date|friends|party|restaurant|celebration)\b/i,
       "music_event" => /\b(concert|live music|music gig|music festival|band performance)\b/i,
+      "walking" => /\b(walk|walking|sightseeing)\b/i,
       "active" => /\b(workout|gym|run|running|hike|hiking|exercise)\b/i,
       "outdoor" => /\b(picnic|outdoor|park|camping)\b/i,
       "travel" => /\b(travel|flight|airport|road trip)\b/i
@@ -32,6 +33,19 @@ module Stylist
       "summer" => /\b(summer|hot|warm)\b/i,
       "fall" => /\b(fall|autumn)\b/i,
       "winter" => /\b(winter|cold|snow)\b/i
+    }.freeze
+    USAGE_RULES = {
+      "special_occasion" => /\b(wedding|reception|gala|black tie|sangeet|mehndi|haldi|religious ceremony)\b/i,
+      "event" => /\b(concert|festival|party|club|celebration)\b/i,
+      "work" => /\b(work|office|business|meeting|interview)\b/i,
+      "travel" => /\b(travel|trip|vacation|holiday|flight|airport|road trip)\b/i,
+      "workout" => /\b(workout|gym|training|run|running|exercise)\b/i,
+      "walking" => /\b(walk|walking|sightseeing)\b/i,
+      "outdoor" => /\b(picnic|hike|hiking|outdoor|park|camping)\b/i,
+      "social" => /\b(dinner|date|friends|restaurant|social)\b/i,
+      "home" => /\b(home|indoors|lounging|loungewear)\b/i,
+      "errands" => /\b(errand|errands|shopping|groceries)\b/i,
+      "everyday" => /\b(daily|everyday|casual|regular day)\b/i
     }.freeze
     LOCATION_WORD = "[[:alpha:]][[:alpha:]'.-]*"
     LOCATION_END = "(?=\\s+(?:on|for|this|next|today|tomorrow|tonight|with|during|after|before)\\b|[,.!?]|\\z)"
@@ -56,7 +70,8 @@ module Stylist
           "occasion" => match_rule(prompt, OCCASION_RULES, "casual"),
           "formality" => match_rule(prompt, FORMALITY_RULES, "casual"),
           "activity" => match_rule(prompt, ACTIVITY_RULES, "social"),
-          "season" => match_rule(prompt, SEASON_RULES, nil)
+          "season" => match_rule(prompt, SEASON_RULES, nil),
+          "usage" => match_rule(prompt, USAGE_RULES, "everyday")
         }.compact
 
         ExtractedContext.new(

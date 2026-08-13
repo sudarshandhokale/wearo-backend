@@ -77,6 +77,7 @@ module StylingPlans
           "city" => plan.city,
           "itinerary" => (prompt if prompt != default_prompt),
           "planned_for" => date.iso8601,
+          "usage" => plan.vacation? ? "travel" : extracted.attributes["usage"],
           "season" => extracted.attributes["season"] || inferred_season(weather),
           "weather" => weather
         ).compact
@@ -151,17 +152,35 @@ module StylingPlans
         items = plan.user.clothing_items.where(id: item_ids).index_by(&:id)
         packed_items = selected_counts.sort_by { |item_id, count| [ -count, item_id ] }.map do |item_id, count|
           item = items.fetch(item_id)
-          { "clothing_item_id" => item_id, "name" => item.name, "category" => item.category, "wear_count" => count }
+          {
+            "clothing_item_id" => item_id,
+            "name" => item.name,
+            "category" => item.category,
+            "quantity" => 1,
+            "wear_count" => count
+          }
         end
 
         {
           "strategy" => I18n.t("styling_plans.compact_packing_strategy"),
           "days" => plan.entries.size,
           "unique_item_count" => item_ids.size,
+          "total_packed_quantity" => packed_items.sum { |item| item["quantity"] },
+          "categories" => category_summary(packed_items),
           "items" => packed_items,
           "suggestions" => suggestions.map(&:stringify_keys).uniq { |item| item["key"] }
                                       .sort_by { |item| PRIORITIES.fetch(item["priority"], 3) }.first(3)
         }
+      end
+
+      def category_summary(packed_items)
+        packed_items.group_by { |item| item["category"] }.map do |category, items|
+          {
+            "category" => category,
+            "quantity" => items.sum { |item| item["quantity"] },
+            "wear_count" => items.sum { |item| item["wear_count"] }
+          }
+        end
       end
     end
   end

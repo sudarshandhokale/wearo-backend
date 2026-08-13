@@ -6,7 +6,7 @@ class Stylist::RecommendationSerializer < ApplicationSerializer
   end
 
   def context
-    object.context
+    labeled_context(object.context)
   end
 
   def outfits
@@ -16,6 +16,6 @@ class Stylist::RecommendationSerializer < ApplicationSerializer
   end
 
   def suggestions
-    object.suggestions
+    object.suggestions.map { |suggestion| Metadata::Labels.suggestion(suggestion) }
   end
 end

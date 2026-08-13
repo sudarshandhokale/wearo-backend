@@ -71,6 +71,13 @@ GET /api/v1/metadata
 Returns ISO country selections and style profile option lists for clients.
 `preferred_city` is free text in Phase 1.
 
+Serialized enum-like values preserve their stable API key and include an adjacent
+localized label following the SAFEGO convention, for example `status` with
+`status_label`. Arrays use a parallel label array such as `season_tags` with
+`season_tag_labels`. Nested stylist context includes adjacent fields such as
+`activity_label`, `occasion_label`, and `formality_label`. Frontends should submit
+and branch on keys, but display labels.
+
 Authentication:
 
 ```text
@@ -134,6 +141,13 @@ The original upload remains the source of truth for analysis and outfit generati
 After analysis, a separate polished catalog image is generated for wardrobe display.
 Clients can use `display_image`, which prefers the polished image and falls back to
 the original. Polishing failures do not fail clothing metadata analysis.
+
+Clothing analysis also suggests `usage_tags` such as `everyday`, `walking`,
+`work`, `travel`, `event`, or `special_occasion`. Users can provide
+`user_usage_tags`; when present, that list is authoritative and is preserved
+across reanalysis. Send `use_ai_usage_tags: true` to clear the override. Responses
+include AI, user, and `effective_usage_tags` values with localized labels and a
+`usage_source`. An explicit empty user list means unrestricted use.
 
 Clothing-item responses provide one stable `cover_image`, preferring the polished
 catalog image over the original. Outfit responses provide `cover_images` for
@@ -219,6 +233,54 @@ Named weekday clauses are applied independently to each day:
 }
 ```
 
+`packing_summary` counts unique wardrobe pieces, not outfit appearances. Each
+item has `quantity: 1` and a separate `wear_count`; a pair of pants reused on
+three days is therefore packed once and worn three times. `categories` provides
+the same distinction in aggregate, and `total_packed_quantity` equals the number
+of unique pieces. Frontends must display `quantity` as the packing count and may
+show `wear_count` as reuse information.
+
+Recurring styling routines:
+
+```text
+POST   /api/v1/styling_routines/drafts
+GET    /api/v1/styling_routines
+POST   /api/v1/styling_routines
+GET    /api/v1/styling_routines/:id
+PATCH  /api/v1/styling_routines/:id
+DELETE /api/v1/styling_routines/:id
+GET    /api/v1/routine_occurrences
+GET    /api/v1/routine_occurrences/today
+```
+
+`drafts` converts a sentence such as `Office weekdays at 8:30 and gym Tuesday
+Thursday at 6pm` into editable routine drafts. The client must show those drafts
+for confirmation and create each accepted routine; parsing does not persist data.
+The same recurring language is accepted by `POST /api/v1/stylist/recommendations`.
+Instead of generating a one-time outfit, Ask WEARO returns
+`intent: "recurring_routine"`, `requires_confirmation: true`, and
+`routine_drafts`. The client must confirm and persist accepted drafts through the
+routine create endpoint.
+Routine times use the user's timezone. A routine may use the profile city or a
+fixed city, and generation adds current Open-Meteo context before selecting a
+stored wardrobe outfit.
+
+Default recommendation timing depends on the activity time. Morning routines
+are prepared at approximately 20:00 on the previous local day so the user can
+prepare clothing in advance. Afternoon and evening routines are prepared 60
+minutes before their start. Clients may let users override the resulting
+`recommendation_lead_minutes` value.
+
+Sidekiq scans the next 24 hours every 15 minutes and queues each occurrence once.
+Generated occurrences and their nested outfits are persisted, so clients fetch
+them without spending AI tokens or regenerating images. `combine_with_next`
+allows a short routine such as school drop-off to share the following office
+outfit when both occur within four hours. The API exposes stable status values
+(`scheduled`, `queued`, `generating`, `generated`, `skipped`, and `failed`) with
+localized labels and failure messages. `reminder_enabled` is retained as the
+user's delivery preference; actual push delivery requires frontend device-token
+registration and is not part of this backend milestone.
+
 Each stylist call creates a user-owned recommendation request that groups its
 outfits and stores the prompt, extracted context, wardrobe suggestions, ranking
 source, provider/model identifiers, retry count, token usage, completion state,
@@ -255,6 +317,12 @@ Completed and in-progress visualizations are reused using a content fingerprint.
 A flat lay is regenerated only when its garment images change. A try-on is
 regenerated when either its garment images or person reference changes. Flat-lay
 and try-on outputs are stored independently in private Active Storage.
+
+Clients should poll a queued visualization until it is `ready` or `failed`. A
+failed response includes stable `failure_code` and localized `failure_message`
+fields. Internal allowance failures use `ai_usage_limit_reached` and include a
+`retry_after` timestamp; clients should show the supplied message and disable
+retry until that time.
 
 A recommendation needs either a top and bottom or one ready one-piece garment
 such as a dress, jumpsuit, or romper, or a complete set such as a co-ord, suit,

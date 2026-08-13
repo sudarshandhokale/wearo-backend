@@ -1,7 +1,10 @@
 class StylingPlan::ViewSerializer < ApplicationSerializer
-  attributes :id, :plan_type, :status, :city, :country_code, :start_date, :end_date, :prompt,
+  attributes :id, :plan_type, :plan_type_label, :status, :status_label, :city, :country_code, :start_date, :end_date, :prompt,
              :weather_context, :events_context, :packing_summary, :failure_code, :completed_at,
              :entries, :created_at, :updated_at
+
+  labeled_attributes :plan_type
+  labeled_attributes :status, scope: :styling_plan_status
 
   def start_date
     object.start_date.iso8601
@@ -13,6 +16,14 @@ class StylingPlan::ViewSerializer < ApplicationSerializer
 
   def completed_at
     format_datetime_value(object.completed_at)
+  end
+
+  def weather_context
+    Metadata::Labels.weather_list(object.weather_context)
+  end
+
+  def packing_summary
+    Metadata::Labels.packing_summary(object.packing_summary)
   end
 
   def entries

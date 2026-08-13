@@ -14,7 +14,11 @@ RSpec.describe ClothingImage::Polish do
   it "stores a separate polished image and records its source" do
     original_blob = item.image.blob
     provider = instance_double(ClothingImage::Providers::Openai)
-    allow(provider).to receive(:call).and_return(
+    allow(provider).to receive(:call).with(
+      image: item.image,
+      category: item.category,
+      subcategory: item.subcategory
+    ).and_return(
       image: UploadHelper::PNG_BYTES,
       metadata: {
         "provider" => "openai",

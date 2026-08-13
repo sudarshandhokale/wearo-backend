@@ -25,6 +25,7 @@ RSpec.describe AnalyzeClothingItemJob, type: :job do
       "occasion_tags" => [ "casual" ],
       "style_tags" => [ "minimal" ],
       "cultural_tags" => [],
+      "usage_tags" => [ "everyday" ],
       "formality_score" => 2
     }
   end
@@ -48,6 +49,17 @@ RSpec.describe AnalyzeClothingItemJob, type: :job do
     expect(item.ai_metadata).to include("provider" => "openai", "confidence" => 0.92)
     expect(item.ai_metadata.dig("image_polish", "status")).to eq("queued")
     expect(item.ai_metadata.dig("image_polish", "source_checksum")).to eq(item.image_checksum)
+  end
+
+  it "preserves the user's usage override when analysis changes AI suggestions" do
+    item.update!(user_usage_tags: [ "walking" ])
+    result = ClothingAnalysis::AnalysisResult.new(attributes: attributes.merge("usage_tags" => [ "travel" ]), metadata: {})
+    allow(ClothingAnalysis::Analyze).to receive(:call).with(item).and_return(result)
+
+    described_class.perform_now(item.id)
+
+    expect(item.reload).to have_attributes(usage_tags: [ "travel" ], user_usage_tags: [ "walking" ])
+    expect(item.effective_usage_tags).to eq([ "walking" ])
   end
 
   it "marks the item failed when analysis raises an error" do

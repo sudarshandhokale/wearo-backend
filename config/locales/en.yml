@@ -1,4 +1,192 @@
 en:
+  api_labels:
+    activity:
+      active: "Active"
+      music_event: "Music Event"
+      outdoor: "Outdoor"
+      professional: "Professional"
+      social: "Social"
+      travel: "Travel"
+      walking: "Walking"
+    clothing_category:
+      accessory: "Accessory"
+      bottom: "Bottom"
+      drape: "Drape"
+      one_piece: "One Piece"
+      outerwear: "Outerwear"
+      set: "Set"
+      shoes: "Shoes"
+      top: "Top"
+    clothing_fit:
+      fitted: "Fitted"
+      flowing: "Flowing"
+      oversized: "Oversized"
+      regular: "Regular"
+      relaxed: "Relaxed"
+      slim: "Slim"
+      structured: "Structured"
+    clothing_usage:
+      errands: "Errands"
+      event: "Event"
+      everyday: "Everyday"
+      home: "At Home"
+      outdoor: "Outdoor"
+      social: "Social"
+      special_occasion: "Special Occasion"
+      travel: "Travel"
+      walking: "Walking"
+      work: "Work"
+      workout: "Workout"
+    clothing_status:
+      analysis_failed: "Analysis Failed"
+      processing: "Processing"
+      ready: "Ready"
+      uploaded: "Uploaded"
+    cover_image_kind:
+      original_item: "Original Item"
+      outfit_flat_lay: "Flat Lay"
+      outfit_try_on: "Try-On"
+      polished_item: "Polished Item"
+    feedback_reaction:
+      disliked: "Disliked"
+      liked: "Liked"
+    feedback_reason:
+      dont_like_colors: "Don't Like the Colors"
+      not_comfortable: "Not Comfortable"
+      not_my_style: "Not My Style"
+      other: "Other"
+      recently_worn: "Recently Worn"
+      too_casual: "Too Casual"
+      too_formal: "Too Formal"
+    formality:
+      casual: "Casual"
+      formal: "Formal"
+      smart_casual: "Smart Casual"
+    occasion:
+      casual: "Casual"
+      concert: "Concert"
+      date_night: "Date Night"
+      dinner: "Dinner"
+      family_function: "Family Function"
+      festival: "Festival"
+      outdoor: "Outdoor"
+      party: "Party"
+      religious_ceremony: "Religious Ceremony"
+      travel: "Travel"
+      wedding: "Wedding"
+      work: "Work"
+      workout: "Workout"
+    outfit_role:
+      accessory: "Accessory"
+      bottom: "Bottom"
+      drape: "Drape"
+      one_piece: "One Piece"
+      outerwear: "Outerwear"
+      set: "Set"
+      shoes: "Shoes"
+      top: "Top"
+    outfit_status:
+      dismissed: "Dismissed"
+      recommended: "Recommended"
+      saved: "Saved"
+      worn: "Worn"
+    plan_type:
+      vacation: "Vacation"
+      week: "Week"
+    ranking_source:
+      ai: "AI"
+      deterministic: "Automatic"
+    routine_type:
+      custom: "Custom"
+      religious: "Religious"
+      school_dropoff: "School or Kita Drop-Off"
+      social: "Social"
+      walking: "Walking"
+      work: "Work"
+      workout: "Workout"
+    city_mode:
+      fixed: "Fixed City"
+      profile: "Profile City"
+    outfit_strategy:
+      combine_with_next: "Combine with Next Routine"
+      separate: "Separate Outfit"
+    routine_occurrence_status:
+      failed: "Failed"
+      generated: "Ready"
+      generating: "Generating"
+      queued: "Queued"
+      scheduled: "Scheduled"
+      skipped: "Skipped"
+    recommendation_status:
+      completed: "Completed"
+      failed: "Failed"
+      processing: "Processing"
+    season:
+      all_season: "All Season"
+      fall: "Fall"
+      spring: "Spring"
+      summer: "Summer"
+      winter: "Winter"
+    visualization_mode:
+      flat_lay: "Flat Lay"
+      try_on: "Try-On"
+    visualization_status:
+      failed: "Failed"
+      processing: "Processing"
+      queued: "Queued"
+      ready: "Ready"
+    styling_plan_status:
+      completed: "Completed"
+      failed: "Failed"
+      processing: "Processing"
+    image_polish_status:
+      failed: "Failed"
+      not_requested: "Not Requested"
+      processing: "Processing"
+      queued: "Queued"
+      ready: "Ready"
+      waiting_for_analysis: "Waiting for Analysis"
+    suggestion_action:
+      add_to_wardrobe: "Add to Wardrobe"
+      bring: "Bring"
+      consider: "Consider"
+      use_owned_item: "Use Owned Item"
+    suggestion_priority:
+      essential: "Essential"
+      optional: "Optional"
+      recommended: "Recommended"
+    suggestion_role:
+      accessory: "Accessory"
+      core: "Core Wardrobe"
+      outerwear: "Outerwear"
+      shoes: "Shoes"
+    suggestion_type:
+      styling: "Styling"
+      wardrobe: "Wardrobe"
+      weather: "Weather"
+    usage:
+      errands: "Errands"
+      event: "Event"
+      everyday: "Everyday"
+      home: "At Home"
+      outdoor: "Outdoor"
+      social: "Social"
+      special_occasion: "Special Occasion"
+      travel: "Travel"
+      walking: "Walking"
+      work: "Work"
+      workout: "Workout"
+    usage_source:
+      ai: "Suggested by WEARO"
+      user: "Chosen by You"
+    weather_condition:
+      clear: "Clear"
+      cloudy: "Cloudy"
+      fog: "Fog"
+      mixed: "Mixed Conditions"
+      rain: "Rain"
+      snow: "Snow"
+      storm: "Storm"
   account_mailer:
     email_confirmation:
       action: "Confirm email"
@@ -30,6 +218,23 @@ en:
     image_required: "A clothing item image is required"
     polish_failed: "The clothing item image could not be polished"
     update_failed: "Clothing item update failed"
+  routines:
+    confirm_drafts: "Review these recurring activities before saving them"
+    deleted: "Routine deleted"
+    failures:
+      generation_failed: "The routine outfit could not be generated. Try again."
+      insufficient_wardrobe: "Add suitable ready clothing to receive this routine recommendation."
+    invalid_prompt: "Describe at least one recurring activity, its days, and preferred time"
+    names:
+      religious: "Religious Service"
+      school_dropoff: "School or Kita Drop-Off"
+      social: "Social Plans"
+      walking: "Walk"
+      work: "Office"
+      workout: "Workout"
+    recommendation_explanation: "Selected for your %{routine} routine and expected conditions."
+    recommendation_prompt: "Routine outfit for %{routine}"
+    save_failed: "The routine could not be saved"
   errors:
     messages:
       bad_request: "The request is invalid"
@@ -99,6 +304,9 @@ en:
   visualizations:
     create_failed: "The outfit visualization could not be requested"
     daily_limit_reached: "You have reached today's outfit visualization limit"
+    failures:
+      ai_usage_limit_reached: "You have reached today's AI usage limit. Try again tomorrow."
+      generation_failed: "The outfit visualization could not be generated. Try again."
     guidance:
       fallback_to_flat_lay: "A flat-lay visualization is being created because no full-body photo is available. Upload one to visualize this outfit on you."
       personalized: "This visualization uses your full-body reference as personalized styling inspiration."

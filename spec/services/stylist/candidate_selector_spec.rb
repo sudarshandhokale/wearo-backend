@@ -38,4 +38,16 @@ RSpec.describe Stylist::CandidateSelector do
         expect(error.required_combinations).to eq([ %w[top bottom], %w[one_piece], %w[drape top], %w[set] ])
       end
   end
+
+  it "excludes items that the user restricted to a different usage context" do
+    top = create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "top", subcategory: "polo", user_usage_tags: [ "travel" ])
+    travel_pants = create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "bottom", subcategory: "trousers", user_usage_tags: [ "travel" ])
+    everyday_pants = create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "bottom", subcategory: "jeans", user_usage_tags: [ "everyday" ])
+
+    result = described_class.call(user: user, context: context.merge("usage" => "travel"))
+
+    expect(result["top"]).to eq([ top ])
+    expect(result["bottom"]).to eq([ travel_pants ])
+    expect(result["bottom"]).not_to include(everyday_pants)
+  end
 end

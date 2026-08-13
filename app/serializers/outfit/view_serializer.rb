@@ -4,12 +4,14 @@ class Outfit::ViewSerializer < ApplicationSerializer
              :name,
              :prompt,
              :occasion,
+             :occasion_label,
              :context,
              :weather_context,
              :recommendation_score,
              :score_breakdown,
              :explanation,
              :status,
+             :status_label,
              :rating,
              :feedback_note,
              :status_updated_at,
@@ -18,6 +20,17 @@ class Outfit::ViewSerializer < ApplicationSerializer
              :items,
              :created_at,
              :updated_at
+
+  labeled_attributes :occasion
+  labeled_attributes :status, scope: :outfit_status
+
+  def context
+    labeled_context(object.context)
+  end
+
+  def weather_context
+    Metadata::Labels.weather(object.weather_context)
+  end
 
   def recommendation_score
     object.recommendation_score&.to_f
@@ -70,6 +83,7 @@ class Outfit::ViewSerializer < ApplicationSerializer
   def visualization_cover(visualization)
     attachment_payload(visualization.image).merge(
       kind: visualization.try_on? ? "outfit_try_on" : "outfit_flat_lay",
+      kind_label: Metadata::Labels.for(visualization.try_on? ? "outfit_try_on" : "outfit_flat_lay", scope: :cover_image_kind),
       generated: true,
       personalized: visualization.try_on?,
       visualization_id: visualization.id
@@ -84,6 +98,7 @@ class Outfit::ViewSerializer < ApplicationSerializer
 
       attachment_payload(attachment).merge(
         kind: clothing_item.polished_image.attached? ? "polished_item" : "original_item",
+        kind_label: Metadata::Labels.for(clothing_item.polished_image.attached? ? "polished_item" : "original_item", scope: :cover_image_kind),
         generated: clothing_item.polished_image.attached?,
         personalized: false,
         clothing_item_id: clothing_item.id

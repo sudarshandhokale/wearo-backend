@@ -50,6 +50,7 @@ module Stylist
                 subcategory: item.subcategory,
                 primary_color: item.primary_color,
                 occasion_tags: Ai::Guardrails.token_list!(item.occasion_tags),
+                usage_tags: Ai::Guardrails.token_list!(item.effective_usage_tags),
                 style_tags: Ai::Guardrails.token_list!(item.style_tags),
                 cultural_tags: Ai::Guardrails.token_list!(item.cultural_tags),
                 fit: item.fit,

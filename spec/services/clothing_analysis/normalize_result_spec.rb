@@ -14,12 +14,13 @@ RSpec.describe ClothingAnalysis::NormalizeResult do
       season_tags: [ "Spring / Summer" ],
       occasion_tags: [ "Everyday Casual" ],
       style_tags: [ "Street Wear" ],
+      usage_tags: [ "Everyday", "Travel", "Unknown Context" ],
       formality_score: "2",
       confidence: "0.91"
     )
 
     expect(result).to include(
-      "name" => "Everyday Tee",
+      "name" => "Navy Gray Color Block Organic Cotton T-shirt",
       "category" => "top",
       "subcategory" => "t_shirt",
       "primary_color" => "navy",
@@ -27,6 +28,7 @@ RSpec.describe ClothingAnalysis::NormalizeResult do
       "pattern" => "color_block",
       "material" => "organic_cotton",
       "fit" => "regular",
+      "usage_tags" => %w[everyday travel],
       "formality_score" => 2,
       "confidence" => 0.91
     )

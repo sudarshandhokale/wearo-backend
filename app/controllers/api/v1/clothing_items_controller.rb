@@ -14,7 +14,7 @@ module Api
       end
 
       def create
-        item = current_user.clothing_items.new(clothing_item_params.except(:image))
+        item = current_user.clothing_items.new(assignable_clothing_item_params.except(:image))
         item.wardrobe = current_user.wardrobe || current_user.create_wardrobe!(name: Wardrobe::DEFAULT_NAME)
         item.status = :processing if clothing_item_params[:image].present?
         item.image.attach(clothing_item_params[:image]) if clothing_item_params[:image].present?
@@ -32,7 +32,7 @@ module Api
 
       def update
         image = clothing_item_params[:image]
-        @clothing_item.assign_attributes(clothing_item_params.except(:image))
+        @clothing_item.assign_attributes(assignable_clothing_item_params.except(:image))
         @clothing_item.image.attach(image) if image.present?
         @clothing_item.status = :processing if image.present?
         @clothing_item.ai_analyzed_at = nil if image.present?
@@ -105,12 +105,20 @@ module Api
           :fit,
           :formality_score,
           :image,
+          :use_ai_usage_tags,
           secondary_colors: [],
           season_tags: [],
           occasion_tags: [],
           style_tags: [],
-          cultural_tags: []
+          cultural_tags: [],
+          user_usage_tags: []
         )
+      end
+
+      def assignable_clothing_item_params
+        clothing_item_params.except(:use_ai_usage_tags).tap do |attributes|
+          attributes[:user_usage_tags] = nil if ActiveModel::Type::Boolean.new.cast(clothing_item_params[:use_ai_usage_tags])
+        end
       end
 
       def per_page

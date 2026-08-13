@@ -192,6 +192,14 @@ class ClothingTaxonomy
       CATEGORIES.dig(category.to_s.to_sym, :subcategories).to_h.keys.map(&:to_s)
     end
 
+    def category_label(category)
+      CATEGORIES.dig(category.to_s.to_sym, :label)
+    end
+
+    def subcategory_label(category, subcategory)
+      CATEGORIES.dig(category.to_s.to_sym, :subcategories, subcategory.to_s.to_sym)
+    end
+
     def categories_for_metadata
       CATEGORIES.map do |key, config|
         {

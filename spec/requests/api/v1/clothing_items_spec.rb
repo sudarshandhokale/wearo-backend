@@ -189,6 +189,49 @@ RSpec.describe "API v1 clothing items", type: :request do
       expect(item.cultural_tags).to eq([ "western" ])
     end
 
+    it "stores an authoritative usage override and can return to AI suggestions" do
+      item = create(
+        :clothing_item,
+        user: user,
+        wardrobe: user.wardrobe,
+        usage_tags: %w[everyday travel]
+      )
+
+      patch "/api/v1/clothing_items/#{item.id}", params: {
+        clothing_item: { user_usage_tags: [ "walking" ] }
+      }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.fetch("data")).to include(
+        "usage_tags" => %w[everyday travel],
+        "user_usage_tags" => [ "walking" ],
+        "user_usage_tag_labels" => [ "Walking" ],
+        "effective_usage_tags" => [ "walking" ],
+        "usage_source" => "user",
+        "usage_source_label" => "Chosen by You"
+      )
+
+      patch "/api/v1/clothing_items/#{item.id}", params: {
+        clothing_item: { use_ai_usage_tags: true }
+      }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("data", "user_usage_tags")).to be_nil
+      expect(response.parsed_body.dig("data", "effective_usage_tags")).to eq(%w[everyday travel])
+      expect(response.parsed_body.dig("data", "usage_source")).to eq("ai")
+    end
+
+    it "rejects unknown user usage contexts" do
+      item = create(:clothing_item, user: user, wardrobe: user.wardrobe)
+
+      patch "/api/v1/clothing_items/#{item.id}", params: {
+        clothing_item: { user_usage_tags: [ "never_on_mars" ] }
+      }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.dig("error", "details")).to include("user_usage_tags")
+    end
+
     it "schedules analysis when the image is replaced" do
       item = create(:clothing_item, user: user, wardrobe: user.wardrobe, status: "ready")
 

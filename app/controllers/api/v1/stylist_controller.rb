@@ -4,6 +4,10 @@ module Api
       before_action :require_ai_processing_consent!
 
       def recommendations
+        if Routines::DetectIntent.recurring?(params[:prompt])
+          return routine_draft_response
+        end
+
         result = Stylist::Recommend.call(
           user: current_user,
           prompt: params[:prompt]
@@ -23,6 +27,21 @@ module Api
             }
           },
           status: :unprocessable_entity
+        )
+      rescue Routines::ParsePrompt::InvalidPromptError
+        error_response(error: { message: I18n.t("routines.invalid_prompt") }, status: :unprocessable_entity)
+      end
+
+      private
+
+      def routine_draft_response
+        success_response(
+          data: {
+            intent: "recurring_routine",
+            requires_confirmation: true,
+            message: I18n.t("routines.confirm_drafts"),
+            routine_drafts: Routines::ParsePrompt.call(params[:prompt])
+          }
         )
       end
     end

@@ -21,4 +21,21 @@ RSpec.describe Visualization::Generate do
     expect(visualization.metadata).to include("requested_mode" => "try_on", "provider" => "openai")
     expect(visualization.ai_requests.last).to have_attributes(status: "succeeded", total_tokens: 30)
   end
+
+  it "stores a stable failure code when the internal AI usage limit is reached" do
+    visualization = create(:outfit_visualization)
+    provider = instance_double(Visualization::Providers::Openai)
+    allow(provider).to receive(:call)
+    allow(Ai::UsageTracker).to receive(:start!).and_raise(Ai::UsageLimitExceededError)
+
+    expect do
+      described_class.call(visualization, provider: provider)
+    end.to raise_error(Ai::UsageLimitExceededError)
+
+    expect(provider).not_to have_received(:call)
+    expect(visualization.reload).to have_attributes(
+      status: "failed",
+      failure_code: "ai_usage_limit_reached"
+    )
+  end
 end

@@ -105,12 +105,19 @@ module Metadata
         clothing_items: {
           categories: ClothingTaxonomy.categories_for_metadata,
           fits: ClothingTaxonomy.fits_for_metadata,
-          statuses: ClothingTaxonomy.statuses_for_metadata
+          statuses: ClothingTaxonomy.statuses_for_metadata,
+          usage_contexts: ClothingUsageTaxonomy.for_metadata
         },
         outfits: {
           roles: OutfitTaxonomy.roles_for_metadata,
           base_compositions: OutfitTaxonomy.base_compositions_for_metadata,
           statuses: OutfitTaxonomy.statuses_for_metadata
+        },
+        routines: {
+          types: StylingRoutine::ROUTINE_TYPES.map { |key| { key: key, label: Metadata::Labels.for(key, scope: :routine_type) } },
+          usages: ClothingUsageTaxonomy.for_metadata,
+          city_modes: StylingRoutine::CITY_MODES.map { |key| { key: key, label: Metadata::Labels.for(key, scope: :city_mode) } },
+          outfit_strategies: StylingRoutine::OUTFIT_STRATEGIES.map { |key| { key: key, label: Metadata::Labels.for(key, scope: :outfit_strategy) } }
         }
       }
     end

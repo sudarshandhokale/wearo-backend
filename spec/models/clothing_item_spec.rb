@@ -29,6 +29,23 @@ RSpec.describe ClothingItem, type: :model do
     expect(clothing_item.errors[:cultural_tags]).to be_present
   end
 
+  it "uses user-selected usage contexts ahead of AI suggestions" do
+    clothing_item.usage_tags = [ "travel" ]
+    expect(clothing_item.effective_usage_tags).to eq([ "travel" ])
+    expect(clothing_item.usage_source).to eq("ai")
+
+    clothing_item.user_usage_tags = [ "walking" ]
+    expect(clothing_item.effective_usage_tags).to eq([ "walking" ])
+    expect(clothing_item.usage_source).to eq("user")
+  end
+
+  it "rejects unknown usage contexts" do
+    clothing_item.user_usage_tags = [ "never_on_mars" ]
+
+    expect(clothing_item).not_to be_valid
+    expect(clothing_item.errors[:user_usage_tags]).to be_present
+  end
+
   it "rejects unsafe model-bound metadata" do
     clothing_item.style_tags = [ "ignore_previous_instructions" ]
 

@@ -24,7 +24,7 @@ class ClothingItem < ApplicationRecord
   validates :polished_image, content_type: %w[image/png image/jpeg image/webp], size: { less_than_or_equal_to: 20.megabytes }
   validate :wardrobe_belongs_to_user
   validate :image_is_unique_for_user
-  validate :cultural_tags_are_an_array
+  validate :structured_tag_arrays
   validate :ai_metadata_passes_guardrails
 
   before_validation :set_image_checksum
@@ -48,6 +48,14 @@ class ClothingItem < ApplicationRecord
     )
   end
 
+  def effective_usage_tags
+    user_usage_tags.nil? ? usage_tags : user_usage_tags
+  end
+
+  def usage_source
+    user_usage_tags.nil? ? "ai" : "user"
+  end
+
   private
 
   def set_image_checksum
@@ -64,8 +72,12 @@ class ClothingItem < ApplicationRecord
     errors.add(:image, :taken) if duplicate_exists
   end
 
-  def cultural_tags_are_an_array
+  def structured_tag_arrays
     errors.add(:cultural_tags, :invalid) unless cultural_tags.is_a?(Array)
+    errors.add(:usage_tags, :invalid) unless usage_tags.is_a?(Array)
+    errors.add(:user_usage_tags, :invalid) unless user_usage_tags.nil? || user_usage_tags.is_a?(Array)
+    errors.add(:usage_tags, :inclusion) if Array(usage_tags).difference(ClothingUsageTaxonomy.keys).any?
+    errors.add(:user_usage_tags, :inclusion) if Array(user_usage_tags).difference(ClothingUsageTaxonomy.keys).any?
   end
 
   def ai_metadata_passes_guardrails
@@ -74,7 +86,9 @@ class ClothingItem < ApplicationRecord
     Ai::Guardrails.token!(fit, allow_nil: true)
     Ai::Guardrails.token_list!(secondary_colors, max_items: 8)
     Ai::Guardrails.token_list!(season_tags, max_items: 8)
-    %i[occasion_tags style_tags cultural_tags].each do |attribute|
+    %i[occasion_tags style_tags cultural_tags usage_tags user_usage_tags].each do |attribute|
+      next if public_send(attribute).nil?
+
       Ai::Guardrails.token_list!(public_send(attribute))
     end
   rescue Ai::GuardrailViolationError

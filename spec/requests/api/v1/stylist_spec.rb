@@ -22,6 +22,25 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
   end
 
   describe "POST /api/v1/stylist/recommendations" do
+    it "returns recurring routine drafts for confirmation without generating outfits" do
+      expect do
+        post "/api/v1/stylist/recommendations", params: {
+          prompt: "Office weekdays at 8:30 and gym Tuesday Thursday at 6pm"
+        }, headers: auth_headers(user)
+      end.not_to change(user.recommendation_requests, :count)
+
+      body = response.parsed_body.fetch("data")
+      expect(response).to have_http_status(:ok)
+      expect(body).to include(
+        "intent" => "recurring_routine",
+        "requires_confirmation" => true,
+        "message" => I18n.t("routines.confirm_drafts")
+      )
+      expect(body.fetch("routine_drafts").pluck("routine_type")).to contain_exactly("work", "workout")
+      expect(user.outfits).to be_empty
+      expect(user.styling_routines).to be_empty
+    end
+
     it "persists and returns up to three outfits using only the current user's wardrobe" do
       owned_items = [
         create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "top", subcategory: "polo", primary_color: "navy", status: "ready"),

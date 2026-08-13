@@ -16,6 +16,8 @@ class User < ApplicationRecord
   has_many :outfit_feedbacks, dependent: :destroy
   has_many :styling_plans, dependent: :destroy
   has_many :outfit_visualizations, dependent: :destroy
+  has_many :styling_routines, dependent: :destroy
+  has_many :routine_occurrences, dependent: :destroy
   has_one_attached :full_body_image
 
   validates :first_name, :timezone, :country_code, presence: true
