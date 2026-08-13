@@ -245,6 +245,14 @@ en:
       unauthorized: "Unauthorized"
   external_context:
     invalid_date_range: "Choose a valid date range of up to 16 days"
+  weather:
+    status:
+      available: "Available"
+      unavailable: "Unavailable"
+    unavailable:
+      location_missing: "Add a city to include live weather in this recommendation."
+      outside_forecast_range: "Live weather is not available yet for this date. The outfit uses season and occasion context instead."
+      provider_unavailable: "Live weather is temporarily unavailable. The outfit uses the remaining styling context instead."
   outfits:
     feedback_failed: "Outfit feedback could not be saved"
     update_failed: "Outfit feedback could not be updated"

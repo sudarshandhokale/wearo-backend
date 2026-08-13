@@ -211,6 +211,19 @@ context. Otherwise the user's saved `preferred_city` is used. The stylist endpoi
 does not accept a separate city override; OpenAI ranks outfits but is not treated
 as a source of live weather data.
 
+One-time prompts support `today`, `tonight`, `tomorrow`, named weekdays,
+`next Friday`, ISO dates such as `2026-08-20`, written dates such as `August 20`
+or `20 Aug`, and unambiguous day-first dates such as `20/08/2026`. Ambiguous
+numeric dates such as `03/04/2027`, invalid dates, and explicit past dates return
+the localized invalid-prompt error instead of being guessed. An optional time can
+follow with `at 7:30pm`.
+
+Recommendation context includes `weather_status` and `weather_status_label`.
+When weather is unavailable it also includes `weather_unavailable_reason` and a
+localized `weather_unavailable_message`. Dates outside the 16-day live forecast
+window still receive an outfit based on occasion, season, usage, and style, but
+the backend does not call Open-Meteo or pretend current weather applies.
+
 Styling plans:
 
 ```text

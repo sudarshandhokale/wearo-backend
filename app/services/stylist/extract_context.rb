@@ -60,6 +60,10 @@ module Stylist
       a an the work office dinner restaurant party concert wedding festival gym park
       spring summer fall autumn winter cold hot warm rain rainy snow snowy
     ].freeze
+    MONTH_LOOKUP = Date::MONTHNAMES.compact.each_with_index.to_h { |name, index| [ name.downcase, index + 1 ] }
+      .merge(Date::ABBR_MONTHNAMES.compact.each_with_index.to_h { |name, index| [ name.downcase, index + 1 ] }).freeze
+    MONTH_PATTERN = MONTH_LOOKUP.keys.sort_by { |name| -name.length }.join("|")
+    WEEKDAY_PATTERN = Date::DAYNAMES.join("|")
 
     class << self
       def call(prompt, timezone:, now: Time.current)
@@ -88,15 +92,65 @@ module Stylist
       end
 
       def extract_recommended_for(prompt, local_now)
-        return local_now.change(hour: 19) if prompt.match?(/\btonight\b/i)
-        return local_now if prompt.match?(/\btoday\b/i)
-        return (local_now + 1.day).change(hour: 12) if prompt.match?(/\btomorrow\b/i)
+        explicit_date = extract_explicit_date(prompt, local_now.to_date)
+        return local_time_for(explicit_date, prompt, local_now) if explicit_date
+        return local_time_for(local_now.to_date, prompt, local_now, default_hour: 19) if prompt.match?(/\btonight\b/i)
+        return local_time_for(local_now.to_date, prompt, local_now, default_hour: local_now.hour, default_minute: local_now.min) if prompt.match?(/\btoday\b/i)
+        return local_time_for(local_now.to_date + 1.day, prompt, local_now) if prompt.match?(/\btomorrow\b/i)
 
-        weekday = Date::DAYNAMES.find { |day_name| prompt.match?(/\b#{Regexp.escape(day_name)}\b/i) }
+        weekday_match = prompt.match(/\b(next\s+)?(#{WEEKDAY_PATTERN})\b/i)
+        weekday = weekday_match&.[](2)&.downcase&.capitalize
         return if weekday.blank?
 
         days_ahead = (Date::DAYNAMES.index(weekday) - local_now.wday) % 7
-        (local_now + days_ahead.days).change(hour: 12)
+        days_ahead = 7 if weekday_match[1].present? && days_ahead.zero?
+        local_time_for(local_now.to_date + days_ahead.days, prompt, local_now)
+      end
+
+      def extract_explicit_date(prompt, today)
+        if (match = prompt.match(/\b(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\b/))
+          return validated_date(match[1], match[2], match[3], today, explicit_year: true)
+        end
+        if (match = prompt.match(/\b(#{MONTH_PATTERN})\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?\b/i))
+          return named_date(match[1], match[2], match[3], today)
+        end
+        if (match = prompt.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(#{MONTH_PATTERN})(?:,?\s+(\d{4}))?\b/i))
+          return named_date(match[2], match[1], match[3], today)
+        end
+        if (match = prompt.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+of\s+(#{MONTH_PATTERN})(?:,?\s+(\d{4}))?\b/i))
+          return named_date(match[2], match[1], match[3], today)
+        end
+        return unless (match = prompt.match(/\b(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})\b/))
+
+        day = match[1].to_i
+        month = match[2].to_i
+        raise InvalidPromptError if day <= 12 && month <= 12
+
+        validated_date(match[3], month, day, today, explicit_year: true)
+      end
+
+      def named_date(month_name, day, year, today)
+        month = MONTH_LOOKUP.fetch(month_name.downcase)
+        candidate = validated_date(year || today.year, month, day, today, explicit_year: year.present?)
+        year.present? || candidate >= today ? candidate : validated_date(today.year + 1, month, day, today, explicit_year: false)
+      end
+
+      def validated_date(year, month, day, today, explicit_year:)
+        date = Date.new(year.to_i, month.to_i, day.to_i)
+        raise InvalidPromptError if explicit_year && date < today
+
+        date
+      rescue Date::Error
+        raise InvalidPromptError
+      end
+
+      def local_time_for(date, prompt, local_now, default_hour: 12, default_minute: 0)
+        match = prompt.match(/\bat\s+([01]?\d|2[0-3])(?::([0-5]\d))?\s*(am|pm)?\b/i)
+        hour = match ? match[1].to_i : default_hour
+        minute = match ? match[2].to_i : default_minute
+        hour = (hour % 12) + 12 if match&.[](3)&.downcase == "pm"
+        hour %= 12 if match&.[](3)&.downcase == "am"
+        local_now.change(year: date.year, month: date.month, day: date.day, hour: hour, min: minute, sec: 0)
       end
 
       def extract_city(prompt)

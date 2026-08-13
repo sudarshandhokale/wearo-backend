@@ -66,4 +66,52 @@ RSpec.describe Stylist::ExtractContext do
     expect(travel.city).to eq("New York")
     expect(seasonal.city).to be_nil
   end
+
+  it "extracts ISO, written, and unambiguous numeric dates with optional times" do
+    now = Time.find_zone!("Europe/Berlin").local(2026, 8, 13, 10, 0)
+
+    iso = described_class.call("Dinner on 2026-08-20 at 7:30pm", timezone: "Europe/Berlin", now: now)
+    written = described_class.call("Concert Aug 21", timezone: "Europe/Berlin", now: now)
+    numeric = described_class.call("Wedding on 22/08/2026", timezone: "Europe/Berlin", now: now)
+
+    expect(iso.recommended_for.strftime("%F %H:%M %z")).to eq("2026-08-20 19:30 +0200")
+    expect(written.recommended_for.to_date).to eq(Date.new(2026, 8, 21))
+    expect(numeric.recommended_for.to_date).to eq(Date.new(2026, 8, 22))
+  end
+
+
+  it "extracts ordinal dates that include of" do
+    now = Time.find_zone!("Europe/Berlin").local(2026, 8, 13, 10, 0)
+
+    result = described_class.call("Wedding on the 20th of August", timezone: "Europe/Berlin", now: now)
+
+    expect(result.recommended_for.to_date).to eq(Date.new(2026, 8, 20))
+  end
+
+  it "moves a yearless written date to the next occurrence" do
+    now = Time.find_zone!("Europe/Berlin").local(2026, 8, 13, 10, 0)
+
+    result = described_class.call("Dinner on August 12", timezone: "Europe/Berlin", now: now)
+
+    expect(result.recommended_for.to_date).to eq(Date.new(2027, 8, 12))
+  end
+
+  it "treats next weekday as the following week when today has that weekday" do
+    friday = Time.find_zone!("Europe/Berlin").local(2026, 8, 14, 10, 0)
+
+    result = described_class.call("Dinner next Friday", timezone: "Europe/Berlin", now: friday)
+
+    expect(result.recommended_for.to_date).to eq(Date.new(2026, 8, 21))
+  end
+
+  it "rejects past, invalid, and ambiguous explicit dates" do
+    now = Time.find_zone!("Europe/Berlin").local(2026, 8, 13, 10, 0)
+
+    expect { described_class.call("Dinner on 2026-08-12", timezone: "Europe/Berlin", now: now) }
+      .to raise_error(Stylist::InvalidPromptError)
+    expect { described_class.call("Dinner on 31/02/2027", timezone: "Europe/Berlin", now: now) }
+      .to raise_error(Stylist::InvalidPromptError)
+    expect { described_class.call("Dinner on 03/04/2027", timezone: "Europe/Berlin", now: now) }
+      .to raise_error(Stylist::InvalidPromptError)
+  end
 end

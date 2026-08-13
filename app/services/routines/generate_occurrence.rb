@@ -56,7 +56,10 @@ module Routines
           "city" => external.city,
           "weather" => weather,
           "routine_id" => routine.id,
-          "routine_name" => routine.name
+          "routine_name" => routine.name,
+          **ExternalContext::WeatherAvailability.call(
+            result: external, requested_date: date, timezone: occurrence.user.timezone
+          )
         }.compact
         [ context, weather ]
       end

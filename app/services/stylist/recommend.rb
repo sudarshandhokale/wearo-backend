@@ -5,10 +5,14 @@ module Stylist
     class << self
       def call(user:, prompt:)
         prompt = Ai::Guardrails.user_prompt!(prompt.to_s)
-        recommendation_request = create_recommendation_request!(user, prompt)
         extracted_context = ExtractContext.call(prompt, timezone: user.timezone)
+        recommendation_request = create_recommendation_request!(user, prompt)
         external_context = fetch_external_context(user, extracted_context)
-        recommendation_context = enriched_context(extracted_context.attributes, external_context)
+        recommendation_context = enriched_context(
+          extracted_context.attributes, external_context,
+          requested_date: extracted_context.recommended_for&.to_date || Time.current.in_time_zone(user.timezone).to_date,
+          timezone: user.timezone
+        )
         personalization = Personalization::Snapshot.call(user: user, as_of: extracted_context.recommended_for&.to_date || Time.current.to_date)
         candidates = CandidateSelector.call(user: user, context: recommendation_context)
         combinations = CombinationBuilder.call(candidates: candidates, context: recommendation_context)
@@ -156,11 +160,14 @@ module Stylist
         )
       end
 
-      def enriched_context(context, external_context)
+      def enriched_context(context, external_context, requested_date:, timezone:)
         weather = external_context.weather.first
         context.merge(
           "city" => external_context.city,
-          "weather" => weather
+          "weather" => weather,
+          **ExternalContext::WeatherAvailability.call(
+            result: external_context, requested_date: requested_date, timezone: timezone
+          )
         ).compact
       end
     end

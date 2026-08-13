@@ -169,6 +169,51 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       expect(response.parsed_body.dig("data", "context", "city")).to eq("Hamburg")
     end
 
+    it "uses an explicit date and reports when live weather is not available yet" do
+      user.update!(preferred_city: "Hamburg", timezone: "Europe/Berlin")
+      create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "one_piece", subcategory: "dress", status: "ready")
+      requested_date = 30.days.from_now.in_time_zone(user.timezone).to_date
+      allow(ExternalContext::Fetch).to receive(:call).and_return(
+        ExternalContext::Result.new(city: "Hamburg", country_code: "DE", weather: [])
+      )
+
+      post "/api/v1/stylist/recommendations", params: {
+        prompt: "Dinner on #{requested_date.iso8601}"
+      }, headers: auth_headers(user)
+
+      context = response.parsed_body.dig("data", "context")
+      expect(response).to have_http_status(:created)
+      expect(ExternalContext::Fetch).to have_received(:call).with(
+        user: user, city: nil, start_date: requested_date, end_date: requested_date
+      )
+      expect(context).to include(
+        "weather_status" => "unavailable",
+        "weather_status_label" => "Unavailable",
+        "weather_unavailable_reason" => "outside_forecast_range",
+        "weather_unavailable_message" => I18n.t("weather.unavailable.outside_forecast_range")
+      )
+    end
+
+    it "reports available live weather for the requested date" do
+      user.update!(preferred_city: "Hamburg", timezone: "Europe/Berlin")
+      create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "one_piece", subcategory: "dress", status: "ready")
+      requested_date = 5.days.from_now.in_time_zone(user.timezone).to_date
+      allow(ExternalContext::Fetch).to receive(:call).and_return(
+        ExternalContext::Result.new(
+          city: "Hamburg", country_code: "DE",
+          weather: [ { "date" => requested_date.iso8601, "condition" => "rain" } ]
+        )
+      )
+
+      post "/api/v1/stylist/recommendations", params: {
+        prompt: "Dinner on #{requested_date.iso8601}"
+      }, headers: auth_headers(user)
+
+      expect(response.parsed_body.dig("data", "context")).to include(
+        "weather_status" => "available", "weather_status_label" => "Available"
+      )
+    end
+
 
     it "recommends a complete set without requiring separates" do
       matching_set = create(
@@ -240,6 +285,17 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
 
     it "rejects a blank prompt with a localized message" do
       post "/api/v1/stylist/recommendations", params: { prompt: " " }, headers: auth_headers(user)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("stylist.invalid_prompt"))
+    end
+
+    it "rejects an ambiguous date without consuming a recommendation" do
+      expect do
+        post "/api/v1/stylist/recommendations", params: {
+          prompt: "Dinner on 03/04/2027"
+        }, headers: auth_headers(user)
+      end.not_to change(user.recommendation_requests, :count)
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("stylist.invalid_prompt"))
