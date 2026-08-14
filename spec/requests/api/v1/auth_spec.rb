@@ -32,6 +32,30 @@ RSpec.describe "API v1 auth", type: :request do
       expect(user.ai_processing_consent_at).to be_present
     end
 
+    it "auto-confirms and returns a session when email confirmation is disabled" do
+      allow(AppConfig).to receive(:fetch).and_call_original
+      allow(AppConfig).to receive(:fetch).with(:email_confirmation_required, default: true).and_return("false")
+
+      expect do
+        post "/api/v1/auth/register", params: {
+          user: {
+            first_name: "Ava",
+            email: "ava@example.com",
+            password: "password123",
+            password_confirmation: "password123",
+            accept_terms: true,
+            accept_privacy: true,
+            accept_ai_processing: true,
+            confirm_adult: true
+          }
+        }
+      end.not_to have_enqueued_mail(AccountMailer, :email_confirmation)
+
+      expect(response).to have_http_status(:created)
+      expect(response.headers["Authorization"]).to start_with("Bearer ")
+      expect(User.find_by!(email: "ava@example.com")).to be_confirmed
+    end
+
     it "returns validation errors" do
       post "/api/v1/auth/register", params: {
         user: {

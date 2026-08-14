@@ -43,11 +43,15 @@ module Api
       def storage_ready?
         return true unless Rails.env.production?
 
-        Rails.application.config.active_storage.service == :amazon && AppConfig.fetch(:aws_storage_bucket).present?
+        service = Rails.application.config.active_storage.service
+        return AppConfig.fetch(:aws_storage_bucket).present? if service == :amazon
+
+        service == :local
       end
 
       def workers_ready?
         return true unless Rails.env.production?
+        return true unless Rails.application.config.active_job.queue_adapter == :sidekiq
 
         require "sidekiq/api"
         Sidekiq::ProcessSet.new.size.positive?

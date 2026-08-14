@@ -1,9 +1,11 @@
 if Rails.env.production?
   required_keys = %i[
     database_url redis_url app_host frontend_url cors_origins openai_api_key
-    aws_storage_bucket aws_region smtp_address smtp_username smtp_password mailer_from
+    mailer_from
     devise_jwt_secret_key terms_url privacy_url
   ]
+  required_keys += %i[smtp_address smtp_username smtp_password] if AppConfig.fetch(:email_delivery_method, default: "smtp") == "smtp"
+  required_keys += %i[aws_storage_bucket aws_region] if AppConfig.fetch(:active_storage_service, default: "local") == "amazon"
   missing_keys = required_keys.select { |key| AppConfig.fetch(key).blank? }
   raise "Missing production configuration: #{missing_keys.map { |key| key.to_s.upcase }.join(', ')}" if missing_keys.any?
 

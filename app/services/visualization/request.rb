@@ -64,7 +64,7 @@ module Visualization
 
       def daily_limit_reached?(user, mode:, auto:)
         limit_key, default = limit_config(mode: mode, auto: auto)
-        limit = Integer(AppConfig.fetch(limit_key, default: default), exception: false).to_i.clamp(1, 100)
+        limit = Integer(AppConfig.fetch(limit_key, default: default), exception: false).to_i.clamp(0, 100)
         local_day = Time.current.in_time_zone(user.timezone).all_day
         scope = user.outfit_visualizations.where(created_at: local_day)
         scope = scope.where(mode: "try_on") if limit_key == :try_on_visualization_daily_limit

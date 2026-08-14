@@ -9,6 +9,8 @@ module Api
         user = User.new(register_params)
 
         if user.save
+          return complete_preview_registration(user) unless email_confirmation_required?
+
           AccountMailer.email_confirmation(user).deliver_later
           success_response(
             data: { message: I18n.t("auth.registration_pending_confirmation") },
@@ -44,13 +46,13 @@ module Api
 
       def resend_confirmation
         user = User.find_by(email: email_param)
-        AccountMailer.email_confirmation(user).deliver_later if user.present? && !user.confirmed?
+        AccountMailer.email_confirmation(user).deliver_later if email_confirmation_required? && user.present? && !user.confirmed?
         success_response(data: { message: I18n.t("auth.confirmation_sent") }, status: :accepted)
       end
 
       def forgot_password
         user = User.find_by(email: email_param)
-        AccountMailer.password_reset(user).deliver_later if user.present?
+        AccountMailer.password_reset(user).deliver_later if email_delivery_enabled? && user.present?
         success_response(data: { message: I18n.t("auth.password_reset_sent") }, status: :accepted)
       end
 
@@ -121,6 +123,21 @@ module Api
 
       def set_authorization_header(user)
         response.set_header("Authorization", "Bearer #{Auth::Token.encode(user)}")
+      end
+
+      def complete_preview_registration(user)
+        user.update!(confirmed_at: Time.current)
+        update_trackable(user)
+        set_authorization_header(user)
+        success_response(data: user, serializer: User::SessionSerializer, status: :created)
+      end
+
+      def email_confirmation_required?
+        ActiveModel::Type::Boolean.new.cast(AppConfig.fetch(:email_confirmation_required, default: true))
+      end
+
+      def email_delivery_enabled?
+        AppConfig.fetch(:email_delivery_method, default: "smtp") != "test"
       end
     end
   end

@@ -18,7 +18,7 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  config.active_storage.service = :amazon
+  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "local").to_sym
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
@@ -44,7 +44,7 @@ Rails.application.configure do
 
   config.cache_store = :redis_cache_store, { url: ENV.fetch("REDIS_URL") }
 
-  config.active_job.queue_adapter = :sidekiq
+  config.active_job.queue_adapter = ENV.fetch("ACTIVE_JOB_QUEUE_ADAPTER", "sidekiq").to_sym
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
@@ -55,7 +55,7 @@ Rails.application.configure do
     host: ENV.fetch("APP_HOST"),
     protocol: "https"
   }
-  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.delivery_method = ENV.fetch("EMAIL_DELIVERY_METHOD", "smtp").to_sym
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.smtp_settings = {
     address: ENV.fetch("SMTP_ADDRESS"),

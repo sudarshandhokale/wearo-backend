@@ -12,7 +12,7 @@ part of this application.
 - Rails 8 API
 - PostgreSQL
 - Active Storage
-- Private S3 storage in production
+- Local Active Storage for free preview deployment
 - Redis
 - Sidekiq
 - RSpec
@@ -360,12 +360,9 @@ remain editable and usable instead of failing analysis.
 
 Use `example.env` as the deployment configuration reference. Production boot
 fails when database, Redis, host, HTTPS frontend, CORS, policy URLs, OpenAI,
-private S3, SMTP, or JWT settings are missing.
-
-For the single-instance AWS preview deployment, see
-[`docs/AWS_EC2_DEPLOYMENT.md`](docs/AWS_EC2_DEPLOYMENT.md). It runs Rails,
-Sidekiq, PostgreSQL, Redis, and Caddy on one EC2 host while deploying the Expo
-web frontend independently through AWS Amplify Hosting.
+SMTP, or JWT settings are missing. S3 settings are required only when
+`ACTIVE_STORAGE_SERVICE=amazon`; local storage can be selected with
+`ACTIVE_STORAGE_SERVICE=local`.
 
 Run separate web and worker processes:
 
