@@ -86,6 +86,21 @@ the most expensive and privacy-sensitive visualization mode.
 If you use an EC2 IAM role for S3 access, leave `AWS_ACCESS_KEY_ID` and
 `AWS_SECRET_ACCESS_KEY` empty in `.env.production`.
 
+For Gmail SMTP preview email, set:
+
+```text
+MAILER_FROM=your-full-gmail-address@gmail.com
+SMTP_ADDRESS=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-full-gmail-address@gmail.com
+SMTP_PASSWORD=your-16-character-gmail-app-password
+SMTP_DOMAIN=gmail.com
+```
+
+Use a Google app password, not your normal Google account password. The Gmail
+account must have 2-step verification enabled before app passwords are
+available.
+
 ## 3. Deploy
 
 ```sh

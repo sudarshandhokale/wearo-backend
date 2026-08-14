@@ -39,13 +39,18 @@ AWS_SECRET_ACCESS_KEY=
 AWS_REGION=eu-central-1
 AWS_STORAGE_BUCKET=wearo-production-private
 
-# Amazon SES SMTP credentials are different from AWS access keys.
+# SMTP. Gmail preview example:
+# SMTP_ADDRESS=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USERNAME=your-full-gmail-address@gmail.com
+# SMTP_PASSWORD=your-16-character-gmail-app-password
+# SMTP_DOMAIN=gmail.com
 MAILER_FROM=no-reply@example.com
-SMTP_ADDRESS=email-smtp.eu-central-1.amazonaws.com
+SMTP_ADDRESS=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USERNAME=replace-with-ses-smtp-username
-SMTP_PASSWORD=replace-with-ses-smtp-password
-SMTP_DOMAIN=example.com
+SMTP_USERNAME=replace-with-full-gmail-address
+SMTP_PASSWORD=replace-with-gmail-app-password
+SMTP_DOMAIN=gmail.com
 
 # Keep this low on a single EC2 preview instance.
 SIDEKIQ_CONCURRENCY=2
