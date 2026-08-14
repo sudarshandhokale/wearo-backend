@@ -1,4 +1,5 @@
 require "active_support/core_ext/integer/time"
+require "uri"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -31,16 +32,30 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Write messages to disk so confirmation and reset emails are inspectable locally.
-  config.action_mailer.delivery_method = :file
+  # Write messages to disk by default, but allow SMTP for shared laptop previews.
+  config.action_mailer.delivery_method = ENV.fetch("EMAIL_DELIVERY_METHOD", "file").to_sym
   config.action_mailer.file_settings = { location: Rails.root.join("tmp/mails") }
+  config.action_mailer.smtp_settings = {
+    address: ENV.fetch("SMTP_ADDRESS", nil),
+    port: ENV.fetch("SMTP_PORT", 587).to_i,
+    user_name: ENV.fetch("SMTP_USERNAME", nil),
+    password: ENV.fetch("SMTP_PASSWORD", nil),
+    domain: ENV.fetch("SMTP_DOMAIN", "localhost"),
+    authentication: :plain,
+    enable_starttls_auto: true
+  }.compact
   config.action_mailer.raise_delivery_errors = true
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
   # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  mailer_url = URI.parse(ENV.fetch("FRONTEND_URL", "http://localhost:8081"))
+  config.action_mailer.default_url_options = {
+    host: mailer_url.host || "localhost",
+    port: mailer_url.port,
+    protocol: mailer_url.scheme || "http"
+  }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
