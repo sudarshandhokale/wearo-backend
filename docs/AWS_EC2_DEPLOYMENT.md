@@ -12,7 +12,7 @@ instance or Availability Zone fails.
 - PostgreSQL and Redis use named Docker volumes on the EC2 EBS disk.
 - PostgreSQL and Redis are not published to the internet.
 - Active Storage uses a private S3 bucket.
-- Amazon SES sends account email over SMTP.
+- Amazon SES or Gmail app-password SMTP sends account email.
 - Expo Web should deploy separately to AWS Amplify Hosting.
 
 The lockfile supports both `x86_64-linux` and `aarch64-linux`. Start with
@@ -30,7 +30,9 @@ Sidekiq, image processing, PostgreSQL, and Redis can exhaust it together.
 6. Point `api.example.com` to the Elastic IP with a Route 53 A record.
 7. Create a private S3 bucket with Block Public Access and default encryption.
 8. Attach an EC2 IAM role granting only required access to that bucket.
-9. Verify the sending domain in SES and request production access when needed.
+9. Configure email. For SES, verify the sending domain and request production
+   access when needed. For Gmail, enable 2-step verification and create an app
+   password for SMTP.
 
 Set the EC2 instance metadata response hop limit to `2` so the AWS SDK inside
 Docker can obtain credentials from the instance role. Keep IMDSv2 required.
@@ -66,6 +68,23 @@ openssl rand -hex 32
 `POSTGRES_PASSWORD` must remain URL-safe because it is interpolated into
 `DATABASE_URL`. `RAILS_MASTER_KEY` comes from the local backend
 `config/master.key`; never commit that key.
+
+For a small public preview, keep AI image generation limits conservative:
+
+```text
+AI_DAILY_TOKEN_LIMIT=50000
+AI_DAILY_REQUEST_LIMIT=30
+STYLIST_DAILY_RECOMMENDATION_LIMIT=15
+VISUALIZATION_DAILY_LIMIT=3
+TRY_ON_VISUALIZATION_DAILY_LIMIT=1
+AUTO_FLAT_LAY_VISUALIZATION_DAILY_LIMIT=30
+```
+
+`TRY_ON_VISUALIZATION_DAILY_LIMIT` is intentionally separate because try-on is
+the most expensive and privacy-sensitive visualization mode.
+
+If you use an EC2 IAM role for S3 access, leave `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY` empty in `.env.production`.
 
 ## 3. Deploy
 
@@ -127,7 +146,8 @@ distribution rather than hosted on EC2.
 
 SES accounts begin in the sandbox. Until AWS grants production access, sender
 and recipient addresses must be verified, which is sufficient only for a small
-controlled preview.
+controlled preview. Gmail SMTP can be used for preview email, but use a Gmail
+app password rather than the account password.
 
 ## Operations
 

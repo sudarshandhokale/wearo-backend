@@ -127,6 +127,24 @@ RSpec.describe "API v1 outfit visualizations", type: :request do
     )
   end
 
+  it "enforces the configured try-on daily limit separately" do
+    user.full_body_image.attach(
+      io: StringIO.new(UploadHelper::PNG_BYTES),
+      filename: "full-body.png",
+      content_type: "image/png"
+    )
+    allow(AppConfig).to receive(:fetch).and_call_original
+    allow(AppConfig).to receive(:fetch).with(:try_on_visualization_daily_limit, default: 1).and_return("1")
+    create(:outfit_visualization, user: user, outfit: outfit, mode: "try_on")
+
+    post "/api/v1/outfits/#{outfit.id}/visualizations", params: {
+      visualization: { mode: "try_on" }
+    }, headers: auth_headers(user)
+
+    expect(response).to have_http_status(:too_many_requests)
+    expect(response.parsed_body.dig("error", "message")).to eq(I18n.t("visualizations.daily_limit_reached"))
+  end
+
   it "stores and reuses try-on separately from the flat lay" do
     user.full_body_image.attach(
       io: StringIO.new(UploadHelper::PNG_BYTES),

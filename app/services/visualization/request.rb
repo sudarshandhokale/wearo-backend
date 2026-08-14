@@ -2,6 +2,7 @@ module Visualization
   class Request
     DEFAULT_DAILY_LIMIT = 10
     DEFAULT_AUTO_DAILY_LIMIT = 30
+    DEFAULT_TRY_ON_DAILY_LIMIT = 1
 
     Result = Data.define(:visualization, :reused, :queued, :limited)
 
@@ -26,7 +27,7 @@ module Visualization
         end
 
         return Result.new(visualization: nil, reused: false, queued: false, limited: false) unless allow_create
-        return Result.new(visualization: nil, reused: false, queued: false, limited: true) if enforce_limit && daily_limit_reached?(user, auto: auto)
+        return Result.new(visualization: nil, reused: false, queued: false, limited: true) if enforce_limit && daily_limit_reached?(user, mode: visualization.mode, auto: auto)
 
         visualization.save!
         GenerateOutfitVisualizationJob.perform_later(visualization.id)
@@ -61,12 +62,20 @@ module Visualization
               .first
       end
 
-      def daily_limit_reached?(user, auto:)
-        limit_key = auto ? :auto_flat_lay_visualization_daily_limit : :visualization_daily_limit
-        default = auto ? DEFAULT_AUTO_DAILY_LIMIT : DEFAULT_DAILY_LIMIT
+      def daily_limit_reached?(user, mode:, auto:)
+        limit_key, default = limit_config(mode: mode, auto: auto)
         limit = Integer(AppConfig.fetch(limit_key, default: default), exception: false).to_i.clamp(1, 100)
         local_day = Time.current.in_time_zone(user.timezone).all_day
-        user.outfit_visualizations.where(created_at: local_day).count >= limit
+        scope = user.outfit_visualizations.where(created_at: local_day)
+        scope = scope.where(mode: "try_on") if limit_key == :try_on_visualization_daily_limit
+        scope.count >= limit
+      end
+
+      def limit_config(mode:, auto:)
+        return [ :try_on_visualization_daily_limit, DEFAULT_TRY_ON_DAILY_LIMIT ] if !auto && mode == "try_on"
+        return [ :auto_flat_lay_visualization_daily_limit, DEFAULT_AUTO_DAILY_LIMIT ] if auto
+
+        [ :visualization_daily_limit, DEFAULT_DAILY_LIMIT ]
       end
 
       def reference_source(visualization)

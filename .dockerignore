@@ -46,6 +46,8 @@
 
 # Ignore development files
 /.devcontainer
+/node_modules
+/.DS_Store
 
 # Ignore Docker-related files
 /.dockerignore

@@ -8,8 +8,8 @@ local:
 
 amazon:
   service: S3
-  access_key_id: <%= AppConfig.fetch(:aws_access_key_id) %>
-  secret_access_key: <%= AppConfig.fetch(:aws_secret_access_key) %>
+  access_key_id: <%= AppConfig.fetch(:aws_access_key_id).presence %>
+  secret_access_key: <%= AppConfig.fetch(:aws_secret_access_key).presence %>
   region: <%= AppConfig.fetch(:aws_region, default: "us-east-1") %>
   bucket: <%= AppConfig.fetch(:aws_storage_bucket, default: "wearo-backend-#{Rails.env}-storage") %>
 
