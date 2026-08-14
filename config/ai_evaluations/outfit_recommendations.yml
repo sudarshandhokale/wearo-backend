@@ -1,0 +1,296 @@
+- id: summer_picnic_no_disliked_colors
+  name: Summer picnic avoids disliked colors
+  prompt: What should I wear for an outdoor picnic today?
+  profile:
+    preferred_styles:
+      - smart_casual
+      - minimal
+    preferred_colors:
+      - white
+      - blue
+    disliked_colors:
+      - orange
+  context:
+    occasion: outdoor
+    formality: casual
+    activity: outdoor
+    season: summer
+    usage: outdoor
+    weather:
+      condition: clear
+      apparent_temperature_min_c: 24
+      apparent_temperature_max_c: 31
+      precipitation_probability: 5
+  wardrobe:
+    - name: White Linen Shirt
+      category: top
+      subcategory: shirt
+      primary_color: white
+      season_tags:
+        - summer
+      occasion_tags:
+        - outdoor
+        - casual
+      style_tags:
+        - minimal
+      usage_tags:
+        - outdoor
+      formality_score: 4
+    - name: Orange Graphic T-shirt
+      category: top
+      subcategory: t_shirt
+      primary_color: orange
+      season_tags:
+        - summer
+      occasion_tags:
+        - outdoor
+      style_tags:
+        - streetwear
+      usage_tags:
+        - outdoor
+      formality_score: 3
+    - name: Blue Chambray Shirt
+      category: top
+      subcategory: shirt
+      primary_color: blue
+      season_tags:
+        - summer
+      occasion_tags:
+        - outdoor
+        - casual
+      style_tags:
+        - minimal
+      usage_tags:
+        - outdoor
+      formality_score: 4
+    - name: Gray Cotton Tank Top
+      category: top
+      subcategory: tank_top
+      primary_color: gray
+      season_tags:
+        - summer
+      occasion_tags:
+        - outdoor
+        - casual
+      style_tags:
+        - athleisure
+      usage_tags:
+        - outdoor
+      formality_score: 2
+    - name: Navy Relaxed Polo
+      category: top
+      subcategory: polo
+      primary_color: navy
+      season_tags:
+        - summer
+      occasion_tags:
+        - outdoor
+        - casual
+      style_tags:
+        - classic
+      usage_tags:
+        - outdoor
+      formality_score: 4
+    - name: Blue Chino Shorts
+      category: bottom
+      subcategory: shorts
+      primary_color: blue
+      season_tags:
+        - summer
+      occasion_tags:
+        - outdoor
+        - casual
+      style_tags:
+        - minimal
+      usage_tags:
+        - outdoor
+      formality_score: 3
+    - name: White Walking Sneakers
+      category: shoes
+      subcategory: sneakers
+      primary_color: white
+      season_tags:
+        - all_season
+      occasion_tags:
+        - outdoor
+        - casual
+      style_tags:
+        - minimal
+      usage_tags:
+        - outdoor
+        - walking
+      formality_score: 3
+  expectations:
+    min_recommendations: 1
+    avoid_colors:
+      - orange
+    required_categories:
+      - top
+      - bottom
+    preferred_usage: outdoor
+
+- id: rainy_commute_needs_protection
+  name: Rainy commute includes weather protection
+  prompt: Office outfit for tomorrow in rain
+  profile:
+    preferred_styles:
+      - classic
+      - business_casual
+    preferred_colors:
+      - navy
+      - gray
+    disliked_colors: []
+  context:
+    occasion: work
+    formality: smart_casual
+    activity: professional
+    season: fall
+    usage: work
+    weather:
+      condition: rain
+      apparent_temperature_min_c: 8
+      apparent_temperature_max_c: 12
+      precipitation_probability: 80
+  wardrobe:
+    - name: Navy Oxford Shirt
+      category: top
+      subcategory: shirt
+      primary_color: navy
+      season_tags:
+        - all_season
+      occasion_tags:
+        - work
+      style_tags:
+        - classic
+      usage_tags:
+        - work
+      formality_score: 6
+    - name: Gray Tailored Trousers
+      category: bottom
+      subcategory: trousers
+      primary_color: gray
+      season_tags:
+        - all_season
+      occasion_tags:
+        - work
+      style_tags:
+        - business_casual
+      usage_tags:
+        - work
+      formality_score: 6
+    - name: Black Waterproof Loafers
+      category: shoes
+      subcategory: loafers
+      primary_color: black
+      season_tags:
+        - fall
+        - winter
+      occasion_tags:
+        - work
+      style_tags:
+        - classic
+        - waterproof
+      usage_tags:
+        - work
+      formality_score: 6
+    - name: Navy Raincoat
+      category: outerwear
+      subcategory: raincoat
+      primary_color: navy
+      season_tags:
+        - fall
+        - winter
+      occasion_tags:
+        - work
+      style_tags:
+        - classic
+        - waterproof
+      usage_tags:
+        - work
+      formality_score: 6
+  expectations:
+    min_recommendations: 1
+    required_categories:
+      - top
+      - bottom
+    preferred_usage: work
+    require_weather_protection: true
+
+- id: recently_worn_penalty
+  name: Recently worn items are deprioritized
+  prompt: Give me a smart casual outfit for dinner tonight
+  profile:
+    preferred_styles:
+      - minimal
+    preferred_colors:
+      - black
+      - white
+    disliked_colors: []
+  context:
+    occasion: dinner
+    formality: smart_casual
+    activity: social
+    season: all_season
+    usage: social
+    weather:
+      condition: cloudy
+      apparent_temperature_min_c: 16
+      apparent_temperature_max_c: 22
+      precipitation_probability: 10
+  wardrobe:
+    - name: Recently Worn Black Blouse
+      category: top
+      subcategory: blouse
+      primary_color: black
+      season_tags:
+        - all_season
+      occasion_tags:
+        - dinner
+      style_tags:
+        - minimal
+      usage_tags:
+        - social
+      formality_score: 6
+      worn_days_ago: 1
+    - name: White Satin Blouse
+      category: top
+      subcategory: blouse
+      primary_color: white
+      season_tags:
+        - all_season
+      occasion_tags:
+        - dinner
+      style_tags:
+        - minimal
+      usage_tags:
+        - social
+      formality_score: 6
+    - name: Black Straight Trousers
+      category: bottom
+      subcategory: trousers
+      primary_color: black
+      season_tags:
+        - all_season
+      occasion_tags:
+        - dinner
+      style_tags:
+        - minimal
+      usage_tags:
+        - social
+      formality_score: 6
+    - name: Black Heels
+      category: shoes
+      subcategory: heels
+      primary_color: black
+      season_tags:
+        - all_season
+      occasion_tags:
+        - dinner
+      style_tags:
+        - minimal
+      usage_tags:
+        - social
+      formality_score: 7
+  expectations:
+    min_recommendations: 1
+    avoid_recently_worn_days: 2
