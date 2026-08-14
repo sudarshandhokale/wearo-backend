@@ -52,4 +52,22 @@ RSpec.describe Ai::UsageTracker do
       failure_code: "provider_error"
     )
   end
+
+  it "does not count configuration failures against the request limit" do
+    allow(AppConfig).to receive(:fetch).and_call_original
+    allow(AppConfig).to receive(:fetch).with(:ai_daily_request_limit, default: 100).and_return("1")
+
+    failed_request = described_class.start!(
+      user: user,
+      operation: "clothing_analysis",
+      trackable: nil,
+      reserved_tokens: 5_000
+    )
+    described_class.fail!(failed_request, ClothingAnalysis::ConfigurationError.new("missing API key"))
+
+    expect(described_class.daily_summary(user)).to include(requests_used: 0, requests_remaining: 1)
+    expect do
+      described_class.start!(user: user, operation: "clothing_analysis", trackable: nil, reserved_tokens: 5_000)
+    end.not_to raise_error
+  end
 end

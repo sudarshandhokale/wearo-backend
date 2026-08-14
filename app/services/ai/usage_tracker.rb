@@ -2,6 +2,7 @@ module Ai
   class UsageTracker
     DEFAULT_DAILY_TOKEN_LIMIT = 50_000
     DEFAULT_DAILY_REQUEST_LIMIT = 100
+    NON_BILLABLE_FAILURE_CODES = %w[configuration_error].freeze
 
     class << self
       def daily_summary(user)
@@ -10,7 +11,7 @@ module Ai
         request_limit = configured_limit(:ai_daily_request_limit, DEFAULT_DAILY_REQUEST_LIMIT)
         tokens_used = scope.succeeded.sum(:total_tokens)
         tokens_reserved = scope.pending.sum(:reserved_tokens)
-        requests_used = scope.count
+        requests_used = billable_request_scope(scope).count
 
         {
           date: Time.current.in_time_zone(user.timezone).to_date.iso8601,
@@ -74,7 +75,7 @@ module Ai
       private
 
       def enforce_request_limit!(scope)
-        raise UsageLimitExceededError if scope.count >= configured_limit(:ai_daily_request_limit, DEFAULT_DAILY_REQUEST_LIMIT)
+        raise UsageLimitExceededError if billable_request_scope(scope).count >= configured_limit(:ai_daily_request_limit, DEFAULT_DAILY_REQUEST_LIMIT)
       end
 
       def enforce_token_limit!(scope, requested_tokens)
@@ -87,6 +88,10 @@ module Ai
       def configured_limit(key, default)
         value = Integer(AppConfig.fetch(key, default: default), exception: false) || default
         value.clamp(1, 10_000_000)
+      end
+
+      def billable_request_scope(scope)
+        scope.where.not(status: :failed, failure_code: NON_BILLABLE_FAILURE_CODES)
       end
 
       def daily_scope(user)
