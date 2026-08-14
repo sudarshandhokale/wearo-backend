@@ -57,6 +57,10 @@ Rails.application.configure do
     protocol: mailer_url.scheme || "http"
   }
 
+  preview_hosts = ENV.fetch("APP_HOST", "").split(",")
+  preview_hosts << mailer_url.host
+  preview_hosts.map(&:presence).compact.each { |host| config.hosts << host }
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
