@@ -66,6 +66,7 @@ module StylingPlans
             completed_at: Time.current
           )
         end
+        request_flat_lay_visualizations(plan.outfits)
         plan
       end
 
@@ -171,6 +172,12 @@ module StylingPlans
           "suggestions" => suggestions.map(&:stringify_keys).uniq { |item| item["key"] }
                                       .sort_by { |item| PRIORITIES.fetch(item["priority"], 3) }.first(3)
         }
+      end
+
+      def request_flat_lay_visualizations(outfits)
+        outfits.each do |outfit|
+          Visualization::Request.call(user: outfit.user, outfit: outfit, mode: "flat_lay", auto: true)
+        end
       end
 
       def category_summary(packed_items)

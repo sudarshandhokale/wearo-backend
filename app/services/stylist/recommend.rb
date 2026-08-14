@@ -40,6 +40,7 @@ module Stylist
           weather: external_context.weather,
           ranked_combinations: ranked_combinations
         )
+        request_flat_lay_visualizations(outfits)
         suggestions = WardrobeSuggestions.call(
           candidates: candidates,
           context: recommendation_context,
@@ -114,6 +115,12 @@ module Stylist
             end
             outfit
           end
+        end
+      end
+
+      def request_flat_lay_visualizations(outfits)
+        outfits.each do |outfit|
+          Visualization::Request.call(user: outfit.user, outfit: outfit, mode: "flat_lay", auto: true)
         end
       end
 

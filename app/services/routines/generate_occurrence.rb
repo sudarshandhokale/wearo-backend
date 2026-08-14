@@ -20,6 +20,7 @@ module Routines
           candidates: candidates, context: context, user: occurrence.user,
           selected_item_ids: selected.items.values.map(&:id)
         )
+        Visualization::Request.call(user: outfit.user, outfit: outfit, mode: "flat_lay", auto: true)
         complete!(occurrence, outfit, context, weather, suggestions)
         complete!(combined_occurrence, outfit, context.merge("combined" => true), weather, suggestions) if combined_occurrence
         occurrence

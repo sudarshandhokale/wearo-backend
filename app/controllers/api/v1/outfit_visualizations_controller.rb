@@ -23,35 +23,27 @@ module Api
       end
 
       def create
-        mode, metadata = resolved_visualization_options
-        visualization = current_user.outfit_visualizations.new(
+        result = Visualization::Request.call(
+          user: current_user,
           outfit: @outfit,
-          mode: mode,
-          metadata: metadata
+          mode: visualization_params[:mode].presence || "flat_lay",
+          reference_image: visualization_params[:reference_image]
         )
-        visualization.reference_image.attach(visualization_params[:reference_image]) if visualization_params[:reference_image].present?
-        visualization.metadata["reference_source"] = reference_source(visualization) if visualization.try_on?
-        visualization.metadata["source_fingerprint"] = Visualization::SourceFingerprint.call(visualization)
 
-        if (existing = reusable_visualization(visualization))
-          purge_transient_reference(visualization)
+        if result.reused
           return success_response(
-            data: existing,
+            data: result.visualization,
             serializer: OutfitVisualization::ViewSerializer,
-            status: existing.ready? ? :ok : :accepted,
+            status: result.visualization.ready? ? :ok : :accepted,
             meta: { reused: true }
           )
         end
 
-        if daily_limit_reached?
-          purge_transient_reference(visualization)
-          return visualization_limit_response
-        end
+        return visualization_limit_response if result.limited
 
-        if visualization.save
-          GenerateOutfitVisualizationJob.perform_later(visualization.id)
+        if result.visualization.present?
           success_response(
-            data: visualization,
+            data: result.visualization,
             serializer: OutfitVisualization::ViewSerializer,
             status: :accepted,
             meta: { reused: false }
@@ -76,52 +68,6 @@ module Api
 
       def visualization_params
         params.require(:visualization).permit(:mode, :reference_image)
-      end
-
-      def resolved_visualization_options
-        requested_mode = visualization_params[:mode].presence || "flat_lay"
-        person_reference_available = visualization_params[:reference_image].present? || current_user.full_body_image.attached?
-        return [ requested_mode, {} ] unless requested_mode == "try_on" && !person_reference_available
-
-        [
-          "flat_lay",
-          {
-            "requested_mode" => "try_on",
-            "fallback_reason" => "person_reference_missing"
-          }
-        ]
-      end
-
-      def daily_limit_reached?
-        limit = Integer(AppConfig.fetch(:visualization_daily_limit, default: DEFAULT_DAILY_LIMIT), exception: false)
-                    .to_i.clamp(1, 100)
-        local_day = Time.current.in_time_zone(current_user.timezone).all_day
-        current_user.outfit_visualizations.where(created_at: local_day).count >= limit
-      end
-
-      def reusable_visualization(visualization)
-        @outfit.outfit_visualizations
-               .joins(:image_attachment)
-               .where(mode: visualization.mode, status: :ready)
-               .where("outfit_visualizations.metadata ->> 'source_fingerprint' = ?", visualization.metadata["source_fingerprint"])
-               .recent_first
-               .first || reusable_in_progress_visualization(visualization)
-      end
-
-      def reference_source(visualization)
-        visualization.reference_image.attached? ? "request" : "profile"
-      end
-
-      def reusable_in_progress_visualization(visualization)
-        @outfit.outfit_visualizations
-               .where(mode: visualization.mode, status: %i[queued processing])
-               .where("outfit_visualizations.metadata ->> 'source_fingerprint' = ?", visualization.metadata["source_fingerprint"])
-               .recent_first
-               .first
-      end
-
-      def purge_transient_reference(visualization)
-        visualization.reference_image.purge if visualization.reference_image.attached? && !visualization.persisted?
       end
 
       def visualization_limit_response

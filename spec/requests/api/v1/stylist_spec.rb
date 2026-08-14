@@ -71,6 +71,29 @@ RSpec.describe "API v1 stylist recommendations", type: :request do
       expect(user.recommendation_requests.last.outfits.count).to eq(3)
     end
 
+    it "automatically queues flat-lay visualizations for generated outfits with item images" do
+      items = [
+        create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "top", subcategory: "polo", primary_color: "navy", status: "ready"),
+        create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "top", subcategory: "shirt", primary_color: "white", status: "ready"),
+        create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "bottom", subcategory: "jeans", primary_color: "navy", status: "ready"),
+        create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "bottom", subcategory: "chinos", primary_color: "beige", status: "ready"),
+        create(:clothing_item, user: user, wardrobe: user.wardrobe, category: "shoes", subcategory: "sneakers", primary_color: "white", status: "ready")
+      ]
+      items.each do |item|
+        item.image.attach(io: StringIO.new(UploadHelper::PNG_BYTES + item.id.to_s), filename: "#{item.id}.png", content_type: "image/png")
+      end
+
+      expect do
+        post "/api/v1/stylist/recommendations", params: {
+          prompt: "Casual dinner with friends tonight"
+        }, headers: auth_headers(user)
+      end.to have_enqueued_job(GenerateOutfitVisualizationJob).exactly(3).times
+        .and change(user.outfit_visualizations.flat_lay, :count).by(3)
+
+      expect(response).to have_http_status(:created)
+      expect(user.outfit_visualizations.pluck(:mode).uniq).to eq([ "flat_lay" ])
+    end
+
     it "recommends a one-piece outfit without requiring shoes" do
       dress = create(
         :clothing_item,
